@@ -1,0 +1,89 @@
+name: Bubble Space Operator
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify scripts and sources
+        run: |
+          test "$(wc -c < solution_0_bubble_space_operator.sh)" -le 4096
+          sh -n solution_0_bubble_space_operator.sh
+          ! grep -Eiq 'sha|hashlib' solution_0_bubble_space_operator.sh
+          for p in \
+            solution_0_ac_motor.sh \
+            solution_0_ac_motor.body \
+            solution_0_ac_motor.clcert \
+            solution_0_analytic_continuation_tm.sh \
+            solution_0_analytic_continuation_tm.body \
+            solution_0_analytic_continuation_tm.clcert \
+            .github/workflows/ac_motor.yml \
+            .github/workflows/analytic_continuation_tm.yml \
+            .github/workflows/bubble_space_operator.yml
+          do
+            test -s "$p"
+          done
+
+      - name: Run bubble space operator baseline
+        run: |
+          chmod +x solution_0_bubble_space_operator.sh
+          ./solution_0_bubble_space_operator.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee bubble_space_operator_output.json
+
+      - name: Validate combined system certificate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          cert=json.loads(Path("solution_0_bubble_space_operator.clcert").read_text())
+          body=json.loads(Path("solution_0_bubble_space_operator.body").read_text())
+          expected=[
+              "solution_0_bubble_space_operator.sh",
+              "solution_0_ac_motor.sh",
+              "solution_0_ac_motor.body",
+              "solution_0_ac_motor.clcert",
+              "solution_0_analytic_continuation_tm.sh",
+              "solution_0_analytic_continuation_tm.body",
+              "solution_0_analytic_continuation_tm.clcert",
+              ".github/workflows/ac_motor.yml",
+              ".github/workflows/analytic_continuation_tm.yml",
+              ".github/workflows/bubble_space_operator.yml",
+          ]
+
+          assert cert["P"]=="solution_0_bubble_space_operator.sh"
+          assert cert["OBJ"]=="repo-combined-zero-spectral-bubble-space-operator"
+          assert cert["PROGRAM_ONTOLOGY"]=="SELF_BYTES+AC_MOTOR+AC_BODY+AC_CERT+ANALYTIC_TM+ANALYTIC_BODY+ANALYTIC_CERT+WORKFLOWS"
+          assert cert["SOURCE_COUNT"]==len(expected)
+          assert [row[0] for row in cert["SOURCES"]]==expected
+          assert all(row[1]==1 and row[2]>0 for row in cert["SOURCES"])
+          assert cert["BUBBLE_SPACE_AS_OPERATOR"]==1
+          assert "BubbleSpaceOperator" in cert["REALITY_BUBBLE"]
+          assert cert["RIEMANN_POINT"]=="1/2+i*log(G)"
+          assert cert["SCHWARZSCHILD_RS"]>0
+          assert cert["STIRLING_ENTROPY"]>=0
+          assert cert["ZETA_POLE_S"]==1
+          assert cert["ZETA_TRUNCATED_H"]>0
+          assert cert["TRAVERSAL_COMPLETE"]==0
+          assert cert["ASYMPTOTIC_TRAVERSAL"]==1
+          assert cert["ZERO"]["MOD"]==2047
+          assert cert["ZERO"]["BEST"][4]==0
+          assert cert["ZERO"]["COMPENSATED_ZERO"]==1
+          assert cert["ENTROPY_LAW_COMPATIBLE"]==1
+          assert cert["OP"]==1 and cert["ZE"]==1
+          assert "formal encoding only" in cert["BOUNDARY"]
+
+          assert body["AX"]=="bubble_space_zero_spectral_operator"
+          assert body["OPERATOR"]=="BubbleSpace := zero-spectral-map(repo-programs+workflows)"
+          assert body["REALITY_BUBBLE"]==cert["REALITY_BUBBLE"]
+          assert [row[0] for row in body["SOURCES"]]==expected
+          assert len(body["BUBBLES"])==len(expected)
+          assert body["ZERO"][0]==2047
+          assert body["ZERO"][1][4]==0
+          assert len(body["TRACE"])>=1
+          PY
