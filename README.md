@@ -1,1 +1,1 @@
-# soution_0_ac_motor.sh
+# solution_0_ac_motor.sh
