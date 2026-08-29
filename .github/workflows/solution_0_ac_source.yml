@@ -1,0 +1,39 @@
+name: solution_0_ac_source
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify
+        run: |
+          test "$(wc -c < solution_0_ac_source.sh)" -le 2048
+          test "$(wc -l < solution_0_ac_source.sh)" -eq 1
+          sh -n solution_0_ac_source.sh
+          ! grep -Eiq 'sha|hashlib' solution_0_ac_source.sh
+          sh solution_0_ac_source.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('solution_0_ac_source.clcert').read_text())
+          b=json.loads(Path('solution_0_ac_source.body').read_text())
+          assert c['P']=='solution_0_ac_source.sh'
+          assert c['O']=='AC_SOURCE'
+          assert c['SRC']==['SCH','STI','RIE']
+          assert c['TM']==1 and c['AC']==1 and c['X']==0
+          assert c['S'][0]==1 and c['S'][1]>0
+          assert c['K']==64 and c['Z']==0
+          assert c['OP']==1 and c['ZE']==1
+          assert c['BD']=='Formal AC source operator only.'
+          assert b['S']==c['S'][1:]
+          assert b['O']=='AC_SOURCE'
+          assert b['SRC']==['SCH','STI','RIE']
+          assert len(b['R'])==64
+          assert all(x[5]==0 for x in b['R'])
+          PY
+          git diff --exit-code -- solution_0_ac_source.body solution_0_ac_source.clcert
