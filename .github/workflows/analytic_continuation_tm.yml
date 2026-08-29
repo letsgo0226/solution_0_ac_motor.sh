@@ -1,0 +1,63 @@
+name: Analytic Continuation TM
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify scripts
+        run: |
+          test "$(wc -c < solution_0_analytic_continuation_tm.sh)" -le 4096
+          sh -n solution_0_analytic_continuation_tm.sh
+          ! grep -Eiq 'sha|hashlib' solution_0_analytic_continuation_tm.sh
+          test -f solution_0_ac_motor.sh
+          test -f solution_0_ac_motor.clcert
+
+      - name: Run analytic continuation baseline
+        run: |
+          chmod +x solution_0_analytic_continuation_tm.sh solution_0_ac_motor.sh
+          ./solution_0_analytic_continuation_tm.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee analytic_continuation_output.json
+
+      - name: Validate ontology certificate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          cert=json.loads(Path("solution_0_analytic_continuation_tm.clcert").read_text())
+          body=json.loads(Path("solution_0_analytic_continuation_tm.body").read_text())
+
+          assert cert["P"]=="solution_0_analytic_continuation_tm.sh"
+          assert cert["OBJ"]=="analytic-continuation-ontology-tm"
+          assert cert["PROGRAM_ONTOLOGY"]=="SELF_BYTES+AC_MOTOR+AC_CERT"
+          assert cert["SOURCE"]["SELF"][0]==1
+          assert cert["SOURCE"]["AC_MOTOR"][0]==1
+          assert cert["SOURCE"]["AC_CERT"][0]==1
+          assert cert["RIEMANN_POINT"]=="1/2+i*log(G)"
+          assert cert["SCHWARZSCHILD_RS"]>0
+          assert cert["STIRLING_ENTROPY"]>=0
+          assert cert["ZETA_POLE_S"]==1
+          assert cert["ZETA_TRUNCATED_H"]>0
+          assert cert["TRAVERSAL_COMPLETE"]==0
+          assert cert["ASYMPTOTIC_TRAVERSAL"]==1
+          assert cert["ZERO"]["MOD"]==2047
+          assert cert["ZERO"]["BEST"][3]==0
+          assert cert["ZERO"]["COMPENSATED_ZERO"]==1
+          assert cert["ENTROPY_LAW_COMPATIBLE"]==1
+          assert cert["OP"]==1 and cert["ZE"]==1
+          assert "formal spectral encoding only" in cert["BOUNDARY"]
+
+          assert body["AX"]=="analytic_continuation_tm"
+          assert body["AC_MOTOR"][0]=="solution_0_ac_motor.sh"
+          assert body["AC_CERT"][0]=="solution_0_ac_motor.clcert"
+          assert body["ZETA_POLE"][0]=="s=1"
+          assert body["ZERO"][0]==2047
+          assert body["ZERO"][1][3]==0
+          assert len(body["TRACE"])>=1
+          PY
