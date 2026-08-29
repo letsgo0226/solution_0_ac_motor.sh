@@ -12,12 +12,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Verify 2 KB script size
-        run: test "$(wc -c < soution_0_ac_motor.sh)" -le 2048
+        run: test "$(wc -c < solution_0_ac_motor.sh)" -le 2048
 
       - name: Run AC Motor
         run: |
-          chmod +x soution_0_ac_motor.sh
-          ./soution_0_ac_motor.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee ac_motor_output.json
+          chmod +x solution_0_ac_motor.sh
+          ./solution_0_ac_motor.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee ac_motor_output.json
 
       - name: Validate certificate
         run: |
@@ -25,11 +25,11 @@ jobs:
           import json
           from pathlib import Path
 
-          script = Path("soution_0_ac_motor.sh").read_text()
+          script = Path("solution_0_ac_motor.sh").read_text()
           assert "sha" not in script.lower()
           assert "hashlib" not in script
 
-          cert = json.loads(Path("soution_0_ac_motor.clcert").read_text())
+          cert = json.loads(Path("solution_0_ac_motor.clcert").read_text())
           assert cert["STATE"] == "SOLVED", cert
           assert cert["CONSISTENT"] == 1, cert
           assert cert["COMPLETE"] == 1, cert
@@ -38,7 +38,7 @@ jobs:
           assert cert["BUG"] == 0, cert
           assert cert["G_R"][0] == 9, cert
 
-          body = json.loads(Path("soution_0_ac_motor.body").read_text())
+          body = json.loads(Path("solution_0_ac_motor.body").read_text())
           assert body["STATE"] == "SOLVED", body
           assert body["REALITY_CONTAINER"] == "solution_0", body
           assert len(body["G_R"]) == 9, body
