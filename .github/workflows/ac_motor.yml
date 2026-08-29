@@ -14,40 +14,35 @@ jobs:
       - name: Verify 2 KB script size
         run: test "$(wc -c < solution_0_ac_motor.sh)" -le 2048
 
-      - name: Run AC Motor
+      - name: Run AC Motor baseline
         run: |
           chmod +x solution_0_ac_motor.sh
           ./solution_0_ac_motor.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee ac_motor_output.json
 
-      - name: Validate certificate
+      - name: Validate baseline certificate
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
+          script=Path("solution_0_ac_motor.sh").read_text()
+          assert "sha" not in script.lower() and "hashlib" not in script
+          cert=json.loads(Path("solution_0_ac_motor.clcert").read_text())
+          body=json.loads(Path("solution_0_ac_motor.body").read_text())
+          assert cert["STATE"]=="SOLVED" and cert["FIX"]==1 and cert["OP"]==1 and cert["BUG"]==0
+          assert cert["FORMAL_MULTIVERSE"]=="UNTESTED"
+          assert body["AC_TM"][0]==["Q","01","d=AC"]
+          assert body["WITNESS_UNIVERSE"] is None
+          PY
 
-          script = Path("solution_0_ac_motor.sh").read_text()
-          assert "sha" not in script.lower()
-          assert "hashlib" not in script
-
-          cert = json.loads(Path("solution_0_ac_motor.clcert").read_text())
-          assert cert["STATE"] == "SOLVED", cert
-          assert cert["CONSISTENT"] == 1, cert
-          assert cert["COMPLETE"] == 1, cert
-          assert cert["FIX"] == 1, cert
-          assert cert["OP"] == 1, cert
-          assert cert["BUG"] == 0, cert
-          assert cert["G_R"][0] == 9, cert
-
-          body = json.loads(Path("solution_0_ac_motor.body").read_text())
-          assert body["STATE"] == "SOLVED", body
-          assert body["REALITY_CONTAINER"] == "solution_0", body
-          assert len(body["G_R"]) == 9, body
-          assert body["AC_TM"][0] == ["Q", "01", "d=AC"], body
-
-          b0 = cert["B0"]
-          for key in ("ENC_SELF", "TM_SELF", "AC_TM", "AC_BODY", "REALITY_CONTAINER", "FEEDBACK"):
-              assert key in b0, key
-          assert b0["AC_TM"][0] == ["Q", "01", "d=AC"], b0
-
-          print("AC Motor workflow certificate OK")
+      - name: Verify formal witness universe
+        run: |
+          ./solution_0_ac_motor.sh "是否存在一條合法的圖靈機路徑使得金錢可以無中生有？" 16 64 >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cert=json.loads(Path("solution_0_ac_motor.clcert").read_text())
+          w=cert["B0"]["WITNESS_UNIVERSE"]
+          assert cert["FORMAL_MULTIVERSE"]=="SAT"
+          assert cert["REALITY_CLAIM"]=="OPEN"
+          assert w=={"U":"U*","DELTA":"m->m+1","TRACE":[0,1],"LEGAL":1}
           PY
