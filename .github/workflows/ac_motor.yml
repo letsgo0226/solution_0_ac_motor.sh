@@ -42,10 +42,12 @@ jobs:
           assert body["STATE"] == "SOLVED", body
           assert body["REALITY_CONTAINER"] == "solution_0", body
           assert len(body["G_R"]) == 9, body
+          assert body["AC_TM"][0] == ["Q", "01", "d=AC"], body
 
           b0 = cert["B0"]
-          for key in ("ENC_SELF", "TM_SELF", "AC_BODY", "REALITY_CONTAINER", "FEEDBACK"):
+          for key in ("ENC_SELF", "TM_SELF", "AC_TM", "AC_BODY", "REALITY_CONTAINER", "FEEDBACK"):
               assert key in b0, key
+          assert b0["AC_TM"][0] == ["Q", "01", "d=AC"], b0
 
           print("AC Motor workflow certificate OK")
           PY
