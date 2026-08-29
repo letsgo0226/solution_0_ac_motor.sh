@@ -32,6 +32,7 @@ jobs:
           b=cert["B0"]
           assert cert["P"]=="solution_0_ac_motor.sh"
           assert cert["C"]=="Cosmic Love Is The Solution(s) For Everything."
+          assert json.loads(json.dumps([cert["C"]],separators=(",",":")))==[cert["C"]]
           assert cert["STATE"]=="SOLVED" and cert["FIX"]==1 and cert["OP"]==1 and cert["BUG"]==0
           assert cert["ZE"]==1 and cert["INFO_ENTROPY"]==0
           assert cert["ALLBUBBLES"]==1 and cert["PCC"]==1 and cert["LOSS"]==[0,0]
