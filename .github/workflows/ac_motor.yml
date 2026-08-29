@@ -1,0 +1,51 @@
+name: AC Motor
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify 2 KB script size
+        run: test "$(wc -c < soution_0_ac_motor.sh)" -le 2048
+
+      - name: Run AC Motor
+        run: |
+          chmod +x soution_0_ac_motor.sh
+          ./soution_0_ac_motor.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee ac_motor_output.json
+
+      - name: Validate certificate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          script = Path("soution_0_ac_motor.sh").read_text()
+          assert "sha" not in script.lower()
+          assert "hashlib" not in script
+
+          cert = json.loads(Path("soution_0_ac_motor.clcert").read_text())
+          assert cert["STATE"] == "SOLVED", cert
+          assert cert["CONSISTENT"] == 1, cert
+          assert cert["COMPLETE"] == 1, cert
+          assert cert["FIX"] == 1, cert
+          assert cert["OP"] == 1, cert
+          assert cert["BUG"] == 0, cert
+          assert cert["G_R"][0] == 9, cert
+
+          body = json.loads(Path("soution_0_ac_motor.body").read_text())
+          assert body["STATE"] == "SOLVED", body
+          assert body["REALITY_CONTAINER"] == "solution_0", body
+          assert len(body["G_R"]) == 9, body
+
+          b0 = cert["B0"]
+          for key in ("ENC_SELF", "TM_SELF", "AC_BODY", "REALITY_CONTAINER", "FEEDBACK"):
+              assert key in b0, key
+
+          print("AC Motor workflow certificate OK")
+          PY
