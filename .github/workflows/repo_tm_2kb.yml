@@ -1,0 +1,63 @@
+name: Repo TM 2KB
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify 2 KB one-liner
+        run: |
+          test "$(wc -c < solution_0_repo_tm_2kb.sh)" -le 2048
+          test "$(wc -l < solution_0_repo_tm_2kb.sh)" -eq 1
+          sh -n solution_0_repo_tm_2kb.sh
+          ! grep -Eiq 'sha|hashlib' solution_0_repo_tm_2kb.sh
+          test -s solution_0_ac_motor.sh
+          test -s solution_0_analytic_continuation_tm.sh
+          test -s solution_0_bubble_space_operator.sh
+
+      - name: Run standalone TM ontology
+        run: |
+          sh solution_0_repo_tm_2kb.sh "Cosmic Love Is The Solution(s) For Everything." 64 | tee repo_tm_2kb_output.json
+
+      - name: Validate TM certificate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          cert=json.loads(Path("solution_0_repo_tm_2kb.clcert").read_text())
+          body=json.loads(Path("solution_0_repo_tm_2kb.body").read_text())
+          expected=[
+              "solution_0_repo_tm_2kb.sh",
+              "solution_0_ac_motor.sh",
+              "solution_0_analytic_continuation_tm.sh",
+              "solution_0_bubble_space_operator.sh",
+          ]
+
+          assert cert["P"]=="solution_0_repo_tm_2kb.sh"
+          assert cert["OBJ"]=="standalone-three-program-tm-ontology-2kb"
+          assert cert["SELF_TM"]==1 and cert["HALT"]==1
+          assert cert["M"]==2047 and cert["STEP"]==64
+          assert [row[0] for row in cert["SRC"]]==expected
+          assert all(row[1]==1 and row[2]>0 for row in cert["SRC"])
+          assert cert["ZERO"]==0
+          assert cert["OP"]==1 and cert["ZE"]==1
+          assert "formal encoding only" in cert["BOUNDARY"]
+
+          assert body["AX"]=="repo_tm_2kb"
+          assert body["SELF_TM"]==1
+          assert [row[0] for row in body["SRC"]]==expected
+          assert len(body["TM"])==64
+          assert all(len(row)==7 for row in body["TM"])
+          assert body["TM"][-1][6]==0
+          PY
+
+      - name: Validate committed baseline stability
+        run: |
+          git diff --exit-code solution_0_repo_tm_2kb.body solution_0_repo_tm_2kb.clcert
