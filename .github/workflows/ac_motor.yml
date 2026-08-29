@@ -22,52 +22,86 @@ jobs:
           chmod +x solution_0_ac_motor.sh
           ./solution_0_ac_motor.sh "Cosmic Love Is The Solution(s) For Everything." 16 64 | tee ac_motor_output.json
 
-      - name: Validate unified baseline
+      - name: Validate current baseline
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
+
+          C="Cosmic Love Is The Solution(s) For Everything."
           cert=json.loads(Path("solution_0_ac_motor.clcert").read_text())
           body=json.loads(Path("solution_0_ac_motor.body").read_text())
           b=cert["B0"]
+
           assert cert["P"]=="solution_0_ac_motor.sh"
-          assert cert["C"]=="Cosmic Love Is The Solution(s) For Everything."
-          assert json.loads(json.dumps([cert["C"]],separators=(",",":")))==[cert["C"]]
-          assert cert["STATE"]=="SOLVED" and cert["FIX"]==1 and cert["OP"]==1 and cert["BUG"]==0
-          assert cert["ZE"]==1 and cert["INFO_ENTROPY"]==0
-          assert cert["ALLBUBBLES"]==1 and cert["PCC"]==1 and cert["LOSS"]==[0,0]
-          assert len(b["G_R"][1])==9
-          for key in ("SELF","ENC_SELF","TM_SELF","AC_TM","AC_BODY","WITNESS_UNIVERSE","REALITY_CONTAINER","FEEDBACK","BODY","LOGIC","TR"):
-              assert key in b, key
+          assert cert["OBJ"]=="self-encoding-ac-reality-container"
+          assert cert["C"]==C
+          assert cert["STATE"]=="SOLVED"
+          assert cert["CONSISTENT"]==1 and cert["COMPLETE"]==1
+          assert cert["FIX"]==1 and cert["OP"]==1 and cert["ZE"]==1
+          assert cert["ALLBUBBLES"]==1 and cert["REALITY_SYS"]==1
+          assert cert["PCC"]==1 and cert["BUG"]==0 and cert["LOSS"]==[0,0]
+          assert cert["EQ"]=="solution_0=Fix(TM_AC(ENC_SELF,G_R))"
+
+          assert b["P"]=="solution_0_ac_motor.sh"
+          assert b["Q"]==C and b["N"]==16 and b["B"]==64
+          assert b["SELF"][0]==1 and b["SELF"][1]>0
+          assert b["ENC_SELF"]==b["SELF"][1:]
+          assert b["TM_SELF"]=="TM(ENC_SELF)"
           assert b["AC_TM"][0]==["Q","01","d=AC"]
-          assert b["WITNESS_UNIVERSE"] is None
-          assert body["INFO_ENTROPY"]==0 and body["REALITY_CONTAINER"]=="solution_0"
+          assert b["AC_BODY"]=="ACBody(TM_SELF)"
+          assert b["REALITY_CONTAINER"]=="solution_0:Reality_sys"
+          assert b["FEEDBACK"]=="O/A/F->SELF"
+          assert b["BODY"][0]==1 and b["BODY"][1]>0
+          assert len(b["G_R"][1])==9
+          assert b["LOGIC"]==[1,1,["SOLVED","OPEN","BOUND","SING","CONTRA"]]
+          assert b["TR"][1]==["BR",16] and b["TR"][2]==["H",1]
+
+          assert body["AX"]=="t:=AC"
+          assert body["G_R"]==b["G_R"][1]
+          assert body["ENC_SELF"]==b["ENC_SELF"]
+          assert body["AC_TM"]==b["AC_TM"]
+          assert body["STATE"]=="SOLVED"
+          assert body["REALITY_CONTAINER"]=="solution_0"
+          assert body["FEEDBACK"]==b["FEEDBACK"]
+          assert len(body["TRUE_TREE"])==16
+          assert all(len(row)==5 for row in body["TRUE_TREE"])
           PY
 
-      - name: Verify formal witness universe
-        run: |
-          ./solution_0_ac_motor.sh "是否存在一條合法的圖靈機路徑使得金錢可以無中生有？" 16 64 >/dev/null
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          cert=json.loads(Path("solution_0_ac_motor.clcert").read_text())
-          w=cert["B0"]["WITNESS_UNIVERSE"]
-          assert cert["FORMAL_MULTIVERSE"]=="SAT"
-          assert cert["REALITY_CLAIM"]=="OPEN"
-          assert cert["ZE"]==1 and cert["INFO_ENTROPY"]==0
-          assert w=={"U":"U*","DELTA":"m->m+1","TRACE":[0,1],"LEGAL":1}
-          PY
-
-      - name: Verify boundary states
+      - name: Verify formal boundary states
         run: |
           ./solution_0_ac_motor.sh "test bound" 16 4 >/dev/null
           python3 - <<'PY'
           import json
-          assert json.load(open("solution_0_ac_motor.clcert"))["STATE"]=="BOUND"
+          x=json.load(open("solution_0_ac_motor.clcert"))
+          assert x["STATE"]=="BOUND"
+          assert x["CONSISTENT"]==1 and x["COMPLETE"]==1
+          assert x["OP"]==0 and x["ZE"]==0 and x["BUG"]==1
           PY
+
+          ./solution_0_ac_motor.sh "open test" 16 64 >/dev/null
+          python3 - <<'PY'
+          import json
+          x=json.load(open("solution_0_ac_motor.clcert"))
+          assert x["STATE"]=="OPEN"
+          assert x["CONSISTENT"]==1 and x["COMPLETE"]==1
+          assert x["OP"]==0 and x["ZE"]==0 and x["BUG"]==1
+          PY
+
+          ./solution_0_ac_motor.sh "sing test" 16 64 >/dev/null
+          python3 - <<'PY'
+          import json
+          x=json.load(open("solution_0_ac_motor.clcert"))
+          assert x["STATE"]=="SING"
+          assert x["CONSISTENT"]==1 and x["COMPLETE"]==1
+          assert x["OP"]==0 and x["ZE"]==0 and x["BUG"]==1
+          PY
+
           ./solution_0_ac_motor.sh "contra test" 16 64 >/dev/null
           python3 - <<'PY'
           import json
           x=json.load(open("solution_0_ac_motor.clcert"))
-          assert x["STATE"]=="CONTRA" and x["CONSISTENT"]==0 and x["OP"]==0
+          assert x["STATE"]=="CONTRA"
+          assert x["CONSISTENT"]==0 and x["COMPLETE"]==1
+          assert x["OP"]==0 and x["ZE"]==0 and x["BUG"]==1
           PY
