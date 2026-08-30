@@ -1,0 +1,60 @@
+name: solution_0_unified
+
+on:
+  push:
+    paths:
+      - "solution_0_unified.sh"
+      - ".github/workflows/solution_0_unified.yml"
+  pull_request:
+    paths:
+      - "solution_0_unified.sh"
+      - ".github/workflows/solution_0_unified.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify one-liner and size
+        run: |
+          test -f solution_0_unified.sh
+          test "$(wc -l < solution_0_unified.sh)" -eq 1
+          test "$(wc -c < solution_0_unified.sh)" -le 2048
+          sh -n solution_0_unified.sh
+          ! grep -Eq 'sha|hashlib' solution_0_unified.sh
+      - name: Verify JSON outputs
+        run: |
+          set -eu
+          sh solution_0_unified.sh > out.blank.json
+          python3 -m json.tool out.blank.json >/dev/null
+          sh solution_0_unified.sh "unified deployment" out.text.json
+          python3 -m json.tool out.text.json >/dev/null
+          sh solution_0_unified.sh "https://example.com/source" > out.url.json
+          python3 -m json.tool out.url.json >/dev/null
+          sh solution_0_unified.sh solution_0_unified.sh > out.file.json
+          python3 -m json.tool out.file.json >/dev/null
+          printf 'stdin unified field' | sh solution_0_unified.sh > out.stdin.json
+          python3 -m json.tool out.stdin.json >/dev/null
+          if sh solution_0_unified.sh "again" out.text.json; then exit 1; fi
+      - name: Verify certificate fields
+        run: |
+          python3 - <<'PY'
+          import json
+          names=["out.blank.json","out.text.json","out.url.json","out.file.json","out.stdin.json"]
+          for name in names:
+              d=json.load(open(name))
+              assert d["P"]=="solution_0_unified.sh"
+              assert d["O"]=="SOLUTION_0_UNIFIED"
+              assert d["AC_SOURCE"]["OP"]==1
+              assert d["AC_SOURCE"]["TM"]==1
+              assert d["AC_SOURCE"]["AC"]==1
+              assert d["AC_SOURCE"]["ZE"]==1
+              assert len(d["AC_SOURCE"]["TRACE"])==32
+              assert d["PROOF"]["CLAIM"]=="qualified_true_under_structural_encoding"
+              assert d["PROOF"]["GLOBAL_COMPLETE"]==0
+              assert d["VERDICT"]=="ACCEPT"
+          assert json.load(open("out.url.json"))["SRC"]=="URL"
+          assert json.load(open("out.file.json"))["SRC"]=="FILE"
+          assert json.load(open("out.stdin.json"))["SRC"]=="TEXT"
+          PY
