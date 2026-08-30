@@ -1,0 +1,35 @@
+name: solution_0_music_2kb
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify
+        run: |
+          test "$(wc -c < solution_0_music_2kb.sh)" -le 2048
+          test "$(wc -l < solution_0_music_2kb.sh)" -eq 1
+          sh -n solution_0_music_2kb.sh
+          ! grep -Eiq 'sha|hashlib' solution_0_music_2kb.sh
+          sh solution_0_music_2kb.sh "Cosmic Love Is The Solution(s) For Everything." >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('solution_0_music_2kb.clcert').read_text())
+          b=json.loads(Path('solution_0_music_2kb.body').read_text())
+          m=Path('solution_0_music_2kb.mid').read_bytes()
+          assert m[:4]==b'MThd' and b'MTrk' in m[:32]
+          assert c['P']=='solution_0_music_2kb.sh'
+          assert c['O']=='MUSIC_AC' and c['AC']==1 and c['MIDI']==1
+          assert c['FORM']==[90,120,180]
+          assert c['STAR']==['M*P','S*M','S*P'] and c['VALID']==1
+          assert c['MID'][0]==1 and c['MID'][1]==len(m) and len(m)>10000
+          assert c['OP']==1 and c['ZE']==1
+          assert b['O']=='MUSIC_AC' and b['FORM']==[90,120,180]
+          PY
+          git diff --exit-code -- solution_0_music_2kb.mid solution_0_music_2kb.body solution_0_music_2kb.clcert
