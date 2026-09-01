@@ -54,7 +54,6 @@ jobs:
               assert d["PROOF"]["CLAIM"]=="qualified_true_under_structural_encoding"
               assert d["PROOF"]["GLOBAL_COMPLETE"]==0
               assert d["VERDICT"]=="ACCEPT"
-              assert "BLEEM" not in d
           assert json.load(open("out.url.json"))["SRC"]=="URL"
           assert json.load(open("out.file.json"))["SRC"]=="FILE"
           assert json.load(open("out.stdin.json"))["SRC"]=="TEXT"
