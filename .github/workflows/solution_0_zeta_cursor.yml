@@ -1,0 +1,71 @@
+name: solution_0_zeta_cursor
+
+on:
+  push:
+    paths:
+      - "solution_0_zeta_cursor.sh"
+      - ".github/workflows/solution_0_zeta_cursor.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare mpmath
+        run: python3 -m pip install -q mpmath
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_zeta_cursor.sh)" -eq 1
+          test "$(wc -c < solution_0_zeta_cursor.sh)" -le 2048
+          sh -n solution_0_zeta_cursor.sh
+          ! grep -E 'sha|hashlib' solution_0_zeta_cursor.sh
+      - name: Verify cursor state and reversible JSONL
+        run: |
+          sh solution_0_zeta_cursor.sh 2 25 z_cursor_state zeta_cursor.jsonl > out1.txt
+          sh solution_0_zeta_cursor.sh 2 25 z_cursor_state zeta_cursor.jsonl > out2.txt
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("zeta_cursor.jsonl")]
+          assert open("z_cursor_state").read()=="5"
+          assert [d["ZERO"][1] for d in rows]==[1,2,3,4]
+          assert open("out1.txt").read().splitlines()[0].startswith("Zero #1")
+          assert open("out2.txt").read().splitlines()[0].startswith("Zero #3")
+          for d in rows:
+            assert d["P"]=="solution_0_zeta_cursor.sh"
+            assert d["O"]=="ZETA_CURSOR"
+            assert d["AC_SOURCE"]==["SCH","STI","RIE"]
+            assert d["NTM"]=="cursor_path"
+            assert d["VERDICT"]=="ACCEPT"
+            g=int(d["G257"]); b=[]
+            while g:
+              b.append(g%257-1); g//=257
+            base={k:d[k] for k in d if k not in ("G257","STATE","VERDICT")}
+            assert bytes(b).decode()==json.dumps(base,separators=(",",":"),sort_keys=True)
+          PY
+      - name: Verify N=0 controlled stream
+        run: |
+          set +e
+          timeout 4s sh solution_0_zeta_cursor.sh 0 20 z_stream_state zeta_stream_cursor.jsonl > stream.txt
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("zeta_stream_cursor.jsonl")]
+          assert len(rows)>=2
+          assert rows[0]["ZERO"]==["zetazero",1]
+          assert rows[1]["ZERO"]==["zetazero",2]
+          assert open("stream.txt").read().splitlines()[0].startswith("Zero #1")
+          PY
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: solution_0_zeta_cursor-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            zeta_cursor.jsonl
+            zeta_stream_cursor.jsonl
+            out1.txt
+            out2.txt
+            stream.txt
+          retention-days: 90
