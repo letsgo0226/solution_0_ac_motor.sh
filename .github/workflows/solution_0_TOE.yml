@@ -27,9 +27,13 @@ jobs:
           d=json.load(open("proof.jsonl"))
           assert d["P"]=="solution_0_TOE.sh"
           assert d["O"]=="TOE_P"
-          assert d["TOE"]=="formal_kernel"
+          assert d["TOE"]=="formal_UTM_kernel"
           assert d["IP"]==1
+          assert d["SELF_RECURSION"]==d["UTM"]==d["ENUM"]==1
+          assert d["COMPLETE"]=="finite_certificates_only"
+          assert d["GLOBAL_COMPLETE"]==0
           assert d["W"][0]==d["P2"][0]==E(d["U"])
+          assert d["U"][-1]==d["PREV"]
           assert d["Z_BLUE"]==0
           assert d["SING"]==0 and d["TIME_END"]==0
           assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
@@ -49,8 +53,12 @@ jobs:
           for i,d in enumerate(rows,1):
             assert d["O"]=="TOE_W"
             assert d["i"]==i
-            assert d["TOE"]=="formal_kernel"
+            assert d["TOE"]=="formal_UTM_kernel"
+            assert d["SELF_RECURSION"]==d["UTM"]==d["ENUM"]==1
+            assert d["COMPLETE"]=="finite_certificates_only"
+            assert d["GLOBAL_COMPLETE"]==0
             assert d["W"][0]==d["P2"][0]==E(d["U"])
+            assert d["U"][-1]==d["PREV"]
             assert d["Z_BLUE"]==0
             assert d["SING"]==0 and d["TIME_END"]==0
             assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
@@ -70,7 +78,7 @@ jobs:
           b=[json.loads(x) for x in open("stream.jsonl")]
           assert len(b)>=4
           for x,y in zip(a,b):
-            for k in ("O","Q","SRC","i","S","BODY","U","W","P2","Z_BLUE","SING","TIME_END"):
+            for k in ("O","Q","SRC","i","S","BODY","PREV","U","W","P2","Z_BLUE","SING","TIME_END"):
               assert x[k]==y[k]
           PY
 
