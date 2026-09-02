@@ -1,0 +1,119 @@
+name: solution_0_Akashic_Records
+
+on:
+  push:
+    paths:
+      - "solution_0_Akashic_Records.sh"
+      - ".github/workflows/solution_0_Akashic_Records.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_Akashic_Records.sh)" -eq 1
+          test "$(wc -c < solution_0_Akashic_Records.sh)" -le 2048
+          sh -n solution_0_Akashic_Records.sh
+          ! grep -E 'hashlib|sha' solution_0_Akashic_Records.sh
+
+      - name: Verify proof
+        run: |
+          sh solution_0_Akashic_Records.sh --proof "f(x): Akashic RH marker" proof.jsonl
+          python3 - <<'PY'
+          import json
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
+          R=lambda n:n>1 and all(n%d for d in range(2,int(n**.5)+1))
+          d=json.load(open("proof.jsonl"))
+          assert d["P"]=="solution_0_Akashic_Records.sh"
+          assert d["O"]=="AK_P"
+          assert d["T"]=="Akashic Records"
+          assert d["SOL"]=="Stream(Cert(s|=f(a_n)))"
+          assert "AK" in d["AX"] and "f/!f" in d["AX"] and "W(x)&P(x)" in d["AX"] and "BT" in d["AX"]
+          assert d["AK"]==d["BT"]==d["WP"]==d["DT"]==d["OO"]==d["CW"]==1
+          assert d["HD"]==d["GC"]==0
+          assert d["SR"]==d["UTM"]==d["EN"]==1
+          assert d["CMP"]=="finite_records"
+          assert d["W"][0]==d["P2"][0]==E(d["U"])
+          assert d["A"]==[d["U"][0],d["U"][1]]
+          assert d["U"][5]==d["PREV"]
+          pk,cn,k,rh,m=d["M"]
+          assert d["M"]==[d["U"][6],d["U"][7],d["U"][0],d["U"][9],d["U"][8]]
+          assert R(pk)
+          if rh:
+            assert cn==pk and m==0
+          else:
+            assert cn!=pk and not R(cn) and cn//2<m<cn and R(m)
+          assert d["Z"]==0 and d["SG"]==0 and d["TE"]==0
+          assert d["AS"]=="SCH/STI/RIE/ZETA"
+          assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["NO"]=="no_phys/no_global/no_TOE/no_time/no_cosmic_memory"
+          assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify finite records
+        run: |
+          sh solution_0_Akashic_Records.sh 4 "f(x): Akashic RH marker" finite.jsonl
+          python3 - <<'PY'
+          import json
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
+          R=lambda n:n>1 and all(n%d for d in range(2,int(n**.5)+1))
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==4
+          for i,d in enumerate(rows,1):
+            assert d["O"]=="AK_R" and d["i"]==i
+            assert d["W"][0]==d["P2"][0]==E(d["U"])
+            assert d["A"]==[d["U"][0],d["U"][1]]
+            pk,cn,k,rh,m=d["M"]
+            assert k==i and R(pk)
+            if rh:
+              assert cn==pk and m==0
+            else:
+              assert cn!=pk and not R(cn) and cn//2<m<cn and R(m)
+            assert d["AK"]==d["BT"]==d["WP"]==d["DT"]==d["OO"]==d["CW"]==1
+            assert d["HD"]==d["GC"]==0
+            assert d["Z"]==0 and d["SG"]==0 and d["TE"]==0
+            assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+            assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify zero stream prefix
+        run: |
+          set +e
+          timeout 1s sh solution_0_Akashic_Records.sh 0 "f(x): Akashic RH marker" stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(b)>=4
+          for x,y in zip(a,b):
+            for k in ("O","T","F","SRC","i","S","BODY","PREV","SOL","AX","A","U","W","P2","M","AK","BT","WP","DT","OO","CW","HD","SR","UTM","EN","CMP","GC","Z","SG","TE"):
+              assert x[k]==y[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_Akashic_Records.sh 1 "f(x): Akashic RH marker" finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: akashic-records-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
