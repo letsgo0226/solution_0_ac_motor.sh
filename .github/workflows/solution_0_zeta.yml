@@ -32,6 +32,7 @@ jobs:
             assert d["P"]=="solution_0_zeta.sh"
             assert d["O"]=="ZETA_REAL_SOURCE"
             assert d["ZERO"]==["zetazero",i]
+            assert d["ALG"] in ("zetazero","scan_siegelz")
             assert d["AC_SOURCE"]==["SCH","STI","RIE"]
             assert d["NTM"]=="determinized_zero_path"
             assert d["EXACT"]=="zero_name_plus_precision_limit"
