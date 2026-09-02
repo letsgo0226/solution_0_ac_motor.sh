@@ -1,0 +1,88 @@
+name: solution_0_cosmic
+
+on:
+  push:
+    paths:
+      - "solution_0_cosmic.sh"
+      - ".github/workflows/solution_0_cosmic.yml"
+  pull_request:
+    paths:
+      - "solution_0_cosmic.sh"
+      - ".github/workflows/solution_0_cosmic.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify one-liner and size
+        run: |
+          test -f solution_0_cosmic.sh
+          test "$(wc -l < solution_0_cosmic.sh)" -eq 1
+          test "$(wc -c < solution_0_cosmic.sh)" -le 2048
+          sh -n solution_0_cosmic.sh
+          ! grep -Eq 'sha|hashlib' solution_0_cosmic.sh
+      - name: Verify JSON outputs
+        run: |
+          set -eu
+          sh solution_0_cosmic.sh > out.blank.json
+          python3 -m json.tool out.blank.json >/dev/null
+          sh solution_0_cosmic.sh "cosmic branch" out.text.json
+          python3 -m json.tool out.text.json >/dev/null
+          sh solution_0_cosmic.sh "https://example.com/cosmic" > out.url.json
+          python3 -m json.tool out.url.json >/dev/null
+          sh solution_0_cosmic.sh solution_0_cosmic.sh > out.file.json
+          python3 -m json.tool out.file.json >/dev/null
+          printf 'stdin cosmic field' | sh solution_0_cosmic.sh > out.stdin.json
+          python3 -m json.tool out.stdin.json >/dev/null
+          if sh solution_0_cosmic.sh "again" out.text.json; then exit 1; fi
+      - name: Verify certificate fields
+        run: |
+          python3 - <<'PY'
+          import json
+          names=["out.blank.json","out.text.json","out.url.json","out.file.json","out.stdin.json"]
+          for name in names:
+              d=json.load(open(name))
+              assert d["P"]=="solution_0_cosmic.sh"
+              assert d["O"]=="COSMIC_AC_NTM"
+              assert d["AC_SOURCE"]==["SCH","STI","RIE"]
+              assert d["TM"]==1 and d["AC"]==1
+              assert d["NTM"]=="finite_branch_projection"
+              assert d["SPEC"]["MOD"]==97 and d["SPEC"]["BR"]==8
+              assert len(d["SPEC"]["TRACE"])==24
+              assert len(d["TRACE"])==24
+              assert d["TREE"]["BUBBLES"]==24
+              assert d["TRUEPLANT"]=="least_fixed_branch_closure"
+              assert d["CLOSED"]==1
+              assert d["VERDICT"]=="ACCEPT"
+          assert json.load(open("out.url.json"))["SRC"]=="URL"
+          assert json.load(open("out.file.json"))["SRC"]=="FILE"
+          assert json.load(open("out.stdin.json"))["SRC"]=="TEXT"
+          PY
+      - name: Write witness manifest
+        run: |
+          python3 - <<'PY'
+          import glob,json,os
+          m={
+            "P":"solution_0_cosmic.sh",
+            "O":"COSMIC_AC_NTM_WITNESS_ARCHIVE",
+            "run_id":os.environ.get("GITHUB_RUN_ID",""),
+            "run_attempt":os.environ.get("GITHUB_RUN_ATTEMPT",""),
+            "ref":os.environ.get("GITHUB_REF",""),
+            "commit":os.environ.get("GITHUB_SHA",""),
+            "retention_days":90,
+            "files":sorted(glob.glob("out.*.json")),
+            "verdict":"ARCHIVED"
+          }
+          open("witness_manifest.json","w").write(json.dumps(m,separators=(",",":"),sort_keys=True)+"\n")
+          PY
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: solution_0_cosmic-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out.*.json
+            witness_manifest.json
+          if-no-files-found: error
+          retention-days: 90
