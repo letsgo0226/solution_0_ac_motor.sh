@@ -1,0 +1,105 @@
+name: solution_0_self_solution
+
+on:
+  push:
+    paths:
+      - "solution_0_self_solution.sh"
+      - ".github/workflows/solution_0_self_solution.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_self_solution.sh)" -eq 1
+          test "$(wc -c < solution_0_self_solution.sh)" -le 2048
+          sh -n solution_0_self_solution.sh
+          ! grep -E 'hashlib|sha' solution_0_self_solution.sh
+
+      - name: Verify proof
+        run: |
+          sh solution_0_self_solution.sh --proof "Cosmic Love Is The Solution(s) For Everything." proof.jsonl
+          python3 - <<'PY'
+          import json
+          d=json.load(open("proof.jsonl"))
+          assert d["P"]=="solution_0_self_solution.sh"
+          assert d["O"]=="SELF_P"
+          assert d["C"]=="Cosmic Love Is The Solution(s) For Everything."
+          assert d["F"]==d["C"]
+          assert d["SOL"]=="solution(s,C)=Cert(s|=C)"
+          assert "s=E(SELF)" in d["AX"] and "f(s)=SAT" in d["AX"]
+          assert d["SS"]==d["SAT"]==1
+          assert d["PERF"]=="finite_self_cert"
+          assert d["SR"]==d["UTM"]==d["EN"]==1
+          assert d["GC"]==d["HD"]==0
+          assert d["Z"]==0
+          assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["W"][0]==d["P2"][0]==d["U"][3]
+          assert d["U"][1]==d["S"]
+          assert d["U"][2]==d["PREV"]
+          assert d["U"][4]==d["SAT"]
+          assert d["NO"]=="no_phys/no_global/no_TOE/no_time/no_abs_perfect"
+          assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify finite self witnesses
+        run: |
+          sh solution_0_self_solution.sh 4 "Cosmic Love Is The Solution(s) For Everything." finite.jsonl
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==4
+          for i,d in enumerate(rows,1):
+            assert d["O"]=="SELF_S" and d["i"]==i
+            assert d["F"]==d["C"]
+            assert d["SS"]==d["SAT"]==1
+            assert d["PERF"]=="finite_self_cert"
+            assert d["W"][0]==d["P2"][0]==d["U"][3]
+            assert d["U"][1]==d["S"]
+            assert d["U"][2]==d["PREV"]
+            assert d["U"][4]==d["SAT"]
+            assert d["SR"]==d["UTM"]==d["EN"]==1
+            assert d["GC"]==d["HD"]==d["Z"]==0
+            assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+            assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify zero stream prefix
+        run: |
+          set +e
+          timeout 1s sh solution_0_self_solution.sh 0 "Cosmic Love Is The Solution(s) For Everything." stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(b)>=4
+          for x,y in zip(a,b):
+            for k in ("O","C","F","i","S","BODY","PREV","SOL","AX","U","W","P2","SS","SAT","PERF","SR","UTM","EN","GC","HD","Z","TM","AC","ZE","OP"):
+              assert x[k]==y[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_self_solution.sh 1 "Cosmic Love Is The Solution(s) For Everything." finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-solution-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
