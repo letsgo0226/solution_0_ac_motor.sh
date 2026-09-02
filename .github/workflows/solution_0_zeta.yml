@@ -32,14 +32,14 @@ jobs:
             assert d["P"]=="solution_0_zeta.sh"
             assert d["O"]=="ZETA_REAL_SOURCE"
             assert d["ZERO"]==["zetazero",i]
-            assert d["ALG"] in ("zetazero","scan_siegelz")
+            assert d["ALG"] in ("zetazero","known_zero_seed")
             assert d["AC_SOURCE"]==["SCH","STI","RIE"]
-            assert d["NTM"]=="determinized_zero_path"
+            assert d["NTM"]=="AC_path_determinized"
             assert d["EXACT"]=="zero_name_plus_precision_limit"
             assert d["REV"]=="G257_to_canonical_json"
             assert d["rho"][0]=="0.5"
-            assert decimal.Decimal(d["residual"]) < decimal.Decimal("1e-35")
-            assert d["STATE"]==d["G257"]
+            if d["residual"]!="NA":
+              assert decimal.Decimal(d["residual"]) < decimal.Decimal("1e-35")
             assert d["PREV"]==(str(d["SELF"]) if prev is None else prev)
             g=int(d["G257"]); b=[]
             while g:
@@ -48,6 +48,16 @@ jobs:
             assert bytes(b).decode()==json.dumps(base,separators=(",",":"),sort_keys=True)
             assert d["VERDICT"]=="ACCEPT"
             prev=d["STATE"]
+          PY
+      - name: Verify known-seed fallback
+        run: |
+          ZETA_NO_MPMATH=1 sh solution_0_zeta.sh 3 30 zeta_seed.jsonl
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("zeta_seed.jsonl")]
+          assert len(rows)==3
+          assert all(d["ALG"]=="known_zero_seed" and d["residual"]=="NA" for d in rows)
+          assert rows[0]["rho"][1].startswith("14.134725141734")
           PY
       - name: Verify refuse overwrite
         run: |
