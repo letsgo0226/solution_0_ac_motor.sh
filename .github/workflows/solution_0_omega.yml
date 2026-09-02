@@ -1,0 +1,69 @@
+name: solution_0_omega
+
+on:
+  push:
+    paths:
+      - "solution_0_omega.sh"
+      - ".github/workflows/solution_0_omega.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_omega.sh)" -eq 1
+          test "$(wc -c < solution_0_omega.sh)" -le 2048
+          sh -n solution_0_omega.sh
+          ! grep -E 'sha|hashlib' solution_0_omega.sh
+      - name: Verify omega bubble certificates
+        run: |
+          sh solution_0_omega.sh 3 "bubble seed" omega_witness.jsonl
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("omega_witness.jsonl")]
+          assert len(rows)==3
+          for i,d in enumerate(rows,1):
+            assert d["P"]=="solution_0_omega.sh"
+            assert d["O"]=="OMEGA_BUBBLE_AC_TM"
+            assert d["STEP"]==i
+            assert d["OMEGA"]=="bubble_containing_all_finite_bubbles"
+            assert d["REALITY"]=="current_certified_bubble"
+            assert d["ONTO"]=="analytic_continuation_as_tm_path"
+            assert d["AC_SOURCE"]==["SCH","STI","RIE"]
+            assert d["TM"]==1 and d["AC"]==1
+            assert d["NTM"]=="branch_determinized"
+            assert d["ZERO"]=="no_unmarked_transition"
+            assert d["VERDICT"]=="ACCEPT"
+            g=int(d["G257"]); b=[]
+            while g:
+              b.append(g%257-1); g//=257
+            base={k:d[k] for k in d if k not in ("G257","STATE","VERDICT")}
+            assert bytes(b).decode()==json.dumps(base,separators=(",",":"),sort_keys=True)
+          PY
+      - name: Verify N=0 controlled stream
+        run: |
+          set +e
+          timeout 3s sh solution_0_omega.sh 0 "bubble seed" omega_stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("omega_stream.jsonl")]
+          assert len(rows)>=3
+          assert [d["STEP"] for d in rows[:3]]==[1,2,3]
+          PY
+      - name: Verify refuse overwrite
+        run: |
+          if sh solution_0_omega.sh 1 x omega_witness.jsonl; then exit 1; else test "$?" -eq 2; fi
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: solution_0_omega-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            omega_witness.jsonl
+            omega_stream.jsonl
+          retention-days: 90
