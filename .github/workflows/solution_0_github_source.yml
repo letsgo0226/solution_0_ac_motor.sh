@@ -23,14 +23,19 @@ jobs:
           sh solution_0_github_source.sh --proof "$U" proof.jsonl
           python3 - <<'PY'
           import json,os
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
           d=json.load(open("proof.jsonl"))
           assert d["P"]=="solution_0_github_source.sh"
-          assert d["O"]=="GHS_PROOF"
+          assert d["O"]=="GHS_P"
           assert d["X"]["K"]=="R"
           assert d["X"]["R"]=="letsgo0226/solution_0_ac_motor.sh"
           assert d["X"]["F"]==os.environ["GITHUB_SHA"]
           assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
-          assert d["NC"]==["no_all","no_priv","no_phys","no_glob"]
+          assert d["W"][0]==d["P2"][0]==E(d["U"])
+          assert d["Z_BLUE"]==0
+          assert d["D"]=="WP_U"
+          assert d["NC"]=="no_all/no_priv/no_phys/no_glob"
           assert d["VERDICT"]=="ACCEPT"
           PY
 
@@ -40,14 +45,19 @@ jobs:
           sh solution_0_github_source.sh 3 "$U" finite.jsonl
           python3 - <<'PY'
           import json,os
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
           rows=[json.loads(x) for x in open("finite.jsonl")]
           assert len(rows)==3
           for i,d in enumerate(rows,1):
-            assert d["O"]=="GHS_WIT"
+            assert d["O"]=="GHS_W"
             assert d["i"]==i
             assert d["X"]["K"]=="R"
             assert d["X"]["F"]==os.environ["GITHUB_SHA"]
-            assert d["SRC"]==["GH","SCH","STI","RIE"]
+            assert d["SRC"]=="GH/SCH/STI/RIE"
+            assert d["W"][0]==d["P2"][0]==E(d["U"])
+            assert d["Z_BLUE"]==0
+            assert d["D"]=="WP_U"
             assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
             assert d["VERDICT"]=="ACCEPT"
           PY
@@ -66,7 +76,7 @@ jobs:
           b=[json.loads(x) for x in open("stream.jsonl")]
           assert len(b)>=3
           for x,y in zip(a,b):
-            for k in ("O","Q","X","C","i","S","U"):
+            for k in ("O","Q","X","C","i","S","U","W","P2","Z_BLUE"):
               assert x[k]==y[k]
           PY
 
