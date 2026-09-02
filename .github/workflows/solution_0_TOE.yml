@@ -29,9 +29,13 @@ jobs:
           assert d["O"]=="TOE_P"
           assert d["TOE"]=="formal_UTM_kernel"
           assert d["IP"]==1
+          assert "W(x)" in d["AX"] and "P(x)" in d["AX"] and "dovetail" in d["AX"]
+          assert d["TREE"]=="W(x),P(x),open,!Z closes"
           assert d["SELF_RECURSION"]==d["UTM"]==d["ENUM"]==1
           assert d["COMPLETE"]=="finite_certificates_only"
           assert d["GLOBAL_COMPLETE"]==0
+          assert d["WP_PRED"]==d["DOVETAIL"]==d["OPEN_OK"]==d["CLOSE_IF_WITNESS"]==1
+          assert d["HALT_DECIDER"]==0
           assert d["W"][0]==d["P2"][0]==E(d["U"])
           assert d["U"][-1]==d["PREV"]
           assert d["Z_BLUE"]==0
@@ -54,9 +58,13 @@ jobs:
             assert d["O"]=="TOE_W"
             assert d["i"]==i
             assert d["TOE"]=="formal_UTM_kernel"
+            assert "W(x)" in d["AX"] and "P(x)" in d["AX"] and "dovetail" in d["AX"]
+            assert d["TREE"]=="W(x),P(x),open,!Z closes"
             assert d["SELF_RECURSION"]==d["UTM"]==d["ENUM"]==1
             assert d["COMPLETE"]=="finite_certificates_only"
             assert d["GLOBAL_COMPLETE"]==0
+            assert d["WP_PRED"]==d["DOVETAIL"]==d["OPEN_OK"]==d["CLOSE_IF_WITNESS"]==1
+            assert d["HALT_DECIDER"]==0
             assert d["W"][0]==d["P2"][0]==E(d["U"])
             assert d["U"][-1]==d["PREV"]
             assert d["Z_BLUE"]==0
@@ -78,7 +86,7 @@ jobs:
           b=[json.loads(x) for x in open("stream.jsonl")]
           assert len(b)>=4
           for x,y in zip(a,b):
-            for k in ("O","Q","SRC","i","S","BODY","PREV","U","W","P2","Z_BLUE","SING","TIME_END"):
+            for k in ("O","Q","SRC","i","S","BODY","PREV","AX","TREE","U","W","P2","WP_PRED","DOVETAIL","OPEN_OK","CLOSE_IF_WITNESS","HALT_DECIDER","Z_BLUE","SING","TIME_END"):
               assert x[k]==y[k]
           PY
 
