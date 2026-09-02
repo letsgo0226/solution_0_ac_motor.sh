@@ -19,56 +19,61 @@ jobs:
 
       - name: Verify proof
         run: |
-          sh solution_0_TOE.sh --proof "information physics and subjective time" proof.jsonl
+          sh solution_0_TOE.sh --proof "f(x): RH marker truth tree" proof.jsonl
           python3 - <<'PY'
           import json
           G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
           E=lambda x:G(x)%10**18
+          R=lambda n:n>1 and all(n%d for d in range(2,int(n**.5)+1))
           d=json.load(open("proof.jsonl"))
           assert d["P"]=="solution_0_TOE.sh"
           assert d["O"]=="TOE_P"
-          assert d["TOE"]=="formal_UTM_kernel"
-          assert d["IP"]==1
-          assert "W(x)" in d["AX"] and "P(x)" in d["AX"] and "dovetail" in d["AX"]
-          assert d["TREE"]=="W(x),P(x),open,!Z closes"
-          assert d["SELF_RECURSION"]==d["UTM"]==d["ENUM"]==1
-          assert d["COMPLETE"]=="finite_certificates_only"
-          assert d["GLOBAL_COMPLETE"]==0
-          assert d["WP_PRED"]==d["DOVETAIL"]==d["OPEN_OK"]==d["CLOSE_IF_WITNESS"]==1
-          assert d["HALT_DECIDER"]==0
+          assert d["SOL"]=="solution(s,f)=Stream(Cert(s|=f))"
+          assert "f/!f" in d["AX"] and "W(x)&P(x)" in d["AX"]
+          assert "RH->prime" in d["AX"] and "!RH->nonprime" in d["AX"]
           assert d["W"][0]==d["P2"][0]==E(d["U"])
-          assert d["U"][-1]==d["PREV"]
-          assert d["Z_BLUE"]==0
-          assert d["SING"]==0 and d["TIME_END"]==0
+          assert d["U"][4]==d["PREV"]
+          pk,cn,k,rh,m=d["M"]
+          assert d["M"]==[d["U"][5],d["U"][6],d["U"][0],d["U"][8],d["U"][7]]
+          assert R(pk)
+          if rh:
+            assert cn==pk and m==0
+          else:
+            assert cn!=pk and not R(cn) and cn//2<m<cn and R(m)
+          assert d["BT"]==d["WP"]==d["DT"]==d["OO"]==d["CW"]==1
+          assert d["HD"]==d["GC"]==0
+          assert d["SR"]==d["UTM"]==d["EN"]==1
+          assert d["CMP"]=="finite_certs"
+          assert d["Z_BLUE"]==0 and d["SING"]==0 and d["TIME_END"]==0
           assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
-          assert d["NC"]=="no_phys/no_global/no_full_TOE/no_time_end/no_orbit_ctl"
+          assert d["NO"]=="no_phys/no_global/no_full_TOE/no_time_end/no_orbit_ctl"
           assert d["VERDICT"]=="ACCEPT"
           PY
 
       - name: Verify finite witness
         run: |
-          sh solution_0_TOE.sh 4 "information physics and subjective time" finite.jsonl
+          sh solution_0_TOE.sh 4 "f(x): RH marker truth tree" finite.jsonl
           python3 - <<'PY'
           import json
           G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
           E=lambda x:G(x)%10**18
+          R=lambda n:n>1 and all(n%d for d in range(2,int(n**.5)+1))
           rows=[json.loads(x) for x in open("finite.jsonl")]
           assert len(rows)==4
           for i,d in enumerate(rows,1):
-            assert d["O"]=="TOE_W"
-            assert d["i"]==i
-            assert d["TOE"]=="formal_UTM_kernel"
-            assert "W(x)" in d["AX"] and "P(x)" in d["AX"] and "dovetail" in d["AX"]
-            assert d["TREE"]=="W(x),P(x),open,!Z closes"
-            assert d["SELF_RECURSION"]==d["UTM"]==d["ENUM"]==1
-            assert d["COMPLETE"]=="finite_certificates_only"
-            assert d["GLOBAL_COMPLETE"]==0
-            assert d["WP_PRED"]==d["DOVETAIL"]==d["OPEN_OK"]==d["CLOSE_IF_WITNESS"]==1
-            assert d["HALT_DECIDER"]==0
+            assert d["O"]=="TOE_W" and d["i"]==i
+            assert d["SOL"]=="solution(s,f)=Stream(Cert(s|=f))"
             assert d["W"][0]==d["P2"][0]==E(d["U"])
-            assert d["U"][-1]==d["PREV"]
-            assert d["Z_BLUE"]==0
-            assert d["SING"]==0 and d["TIME_END"]==0
+            pk,cn,k,rh,m=d["M"]
+            assert k==i and R(pk)
+            if rh:
+              assert cn==pk and m==0
+            else:
+              assert cn!=pk and not R(cn) and cn//2<m<cn and R(m)
+            assert d["BT"]==d["WP"]==d["DT"]==d["OO"]==d["CW"]==1
+            assert d["HD"]==d["GC"]==0
+            assert d["SR"]==d["UTM"]==d["EN"]==1
+            assert d["Z_BLUE"]==0 and d["SING"]==0 and d["TIME_END"]==0
             assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
             assert d["VERDICT"]=="ACCEPT"
           PY
@@ -76,7 +81,7 @@ jobs:
       - name: Verify zero stream prefix
         run: |
           set +e
-          timeout 1s sh solution_0_TOE.sh 0 "information physics and subjective time" stream.jsonl
+          timeout 1s sh solution_0_TOE.sh 0 "f(x): RH marker truth tree" stream.jsonl
           rc=$?
           set -e
           test "$rc" -eq 124
@@ -86,14 +91,14 @@ jobs:
           b=[json.loads(x) for x in open("stream.jsonl")]
           assert len(b)>=4
           for x,y in zip(a,b):
-            for k in ("O","Q","SRC","i","S","BODY","PREV","AX","TREE","U","W","P2","WP_PRED","DOVETAIL","OPEN_OK","CLOSE_IF_WITNESS","HALT_DECIDER","Z_BLUE","SING","TIME_END"):
+            for k in ("O","F","SRC","i","S","BODY","PREV","SOL","AX","U","W","P2","M","BT","WP","DT","OO","CW","HD","SR","UTM","EN","CMP","GC","Z_BLUE","SING","TIME_END"):
               assert x[k]==y[k]
           PY
 
       - name: Verify refuse overwrite
         run: |
           set +e
-          sh solution_0_TOE.sh 1 "information physics and subjective time" finite.jsonl 2>refuse.err
+          sh solution_0_TOE.sh 1 "f(x): RH marker truth tree" finite.jsonl 2>refuse.err
           rc=$?
           set -e
           test "$rc" -eq 2
