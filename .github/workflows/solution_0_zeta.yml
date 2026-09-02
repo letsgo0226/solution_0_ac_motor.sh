@@ -59,6 +59,22 @@ jobs:
           assert all(d["ALG"]=="known_zero_seed" and d["residual"]=="NA" for d in rows)
           assert rows[0]["rho"][1].startswith("14.134725141734")
           PY
+      - name: Verify N=0 stream mode
+        run: |
+          set +e
+          timeout 12s sh solution_0_zeta.sh 0 30 zeta_stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          lines=[x for x in open("zeta_stream.jsonl") if x.endswith("\n")]
+          rows=[json.loads(x) for x in lines]
+          assert len(rows)>=2
+          assert rows[0]["ZERO"]==["zetazero",1]
+          assert rows[1]["ZERO"]==["zetazero",2]
+          assert all(d["VERDICT"]=="ACCEPT" for d in rows[:2])
+          PY
       - name: Verify refuse overwrite
         run: |
           if sh solution_0_zeta.sh 1 20 zeta_witness.jsonl; then exit 1; else test "$?" -eq 2; fi
@@ -66,5 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: solution_0_zeta-witness-${{ github.run_id }}-${{ github.run_attempt }}
-          path: zeta_witness.jsonl
+          path: |
+            zeta_witness.jsonl
+            zeta_stream.jsonl
           retention-days: 90
