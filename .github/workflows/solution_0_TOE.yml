@@ -1,0 +1,93 @@
+name: solution_0_TOE
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_TOE.sh)" -eq 1
+          test "$(wc -c < solution_0_TOE.sh)" -le 2048
+          sh -n solution_0_TOE.sh
+          ! grep -E 'hashlib|sha' solution_0_TOE.sh
+
+      - name: Verify proof
+        run: |
+          sh solution_0_TOE.sh --proof "information physics and subjective time" proof.jsonl
+          python3 - <<'PY'
+          import json
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
+          d=json.load(open("proof.jsonl"))
+          assert d["P"]=="solution_0_TOE.sh"
+          assert d["O"]=="TOE_P"
+          assert d["TOE"]=="formal_kernel"
+          assert d["IP"]==1
+          assert d["W"][0]==d["P2"][0]==E(d["U"])
+          assert d["Z_BLUE"]==0
+          assert d["SING"]==0 and d["TIME_END"]==0
+          assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["NC"]=="no_phys/no_global/no_full_TOE/no_time_end/no_orbit_ctl"
+          assert d["VERDICT"]=="ACCEPT"
+          PY
+
+      - name: Verify finite witness
+        run: |
+          sh solution_0_TOE.sh 4 "information physics and subjective time" finite.jsonl
+          python3 - <<'PY'
+          import json
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==4
+          for i,d in enumerate(rows,1):
+            assert d["O"]=="TOE_W"
+            assert d["i"]==i
+            assert d["TOE"]=="formal_kernel"
+            assert d["W"][0]==d["P2"][0]==E(d["U"])
+            assert d["Z_BLUE"]==0
+            assert d["SING"]==0 and d["TIME_END"]==0
+            assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+            assert d["VERDICT"]=="ACCEPT"
+          PY
+
+      - name: Verify zero stream prefix
+        run: |
+          set +e
+          timeout 1s sh solution_0_TOE.sh 0 "information physics and subjective time" stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(b)>=4
+          for x,y in zip(a,b):
+            for k in ("O","Q","SRC","i","S","BODY","U","W","P2","Z_BLUE","SING","TIME_END"):
+              assert x[k]==y[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_TOE.sh 1 "information physics and subjective time" finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: toe-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
