@@ -1,0 +1,90 @@
+name: solution_0_github_source
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_github_source.sh)" -eq 1
+          test "$(wc -c < solution_0_github_source.sh)" -le 2048
+          sh -n solution_0_github_source.sh
+          ! grep -E 'hashlib|sha' solution_0_github_source.sh
+
+      - name: Verify GitHub source proof
+        run: |
+          U="https://github.com/letsgo0226/solution_0_ac_motor.sh/tree/${GITHUB_SHA}"
+          sh solution_0_github_source.sh --proof "$U" proof.jsonl
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open("proof.jsonl"))
+          assert d["P"]=="solution_0_github_source.sh"
+          assert d["O"]=="GHS_PROOF"
+          assert d["X"]["K"]=="R"
+          assert d["X"]["R"]=="letsgo0226/solution_0_ac_motor.sh"
+          assert d["X"]["F"]==os.environ["GITHUB_SHA"]
+          assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["NC"]==["no_all","no_priv","no_phys","no_glob"]
+          assert d["VERDICT"]=="ACCEPT"
+          PY
+
+      - name: Verify finite witness
+        run: |
+          U="https://github.com/letsgo0226/solution_0_ac_motor.sh/tree/${GITHUB_SHA}"
+          sh solution_0_github_source.sh 3 "$U" finite.jsonl
+          python3 - <<'PY'
+          import json,os
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==3
+          for i,d in enumerate(rows,1):
+            assert d["O"]=="GHS_WIT"
+            assert d["i"]==i
+            assert d["X"]["K"]=="R"
+            assert d["X"]["F"]==os.environ["GITHUB_SHA"]
+            assert d["SRC"]==["GH","SCH","STI","RIE"]
+            assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+            assert d["VERDICT"]=="ACCEPT"
+          PY
+
+      - name: Verify zero stream prefix
+        run: |
+          U="https://github.com/letsgo0226/solution_0_ac_motor.sh/tree/${GITHUB_SHA}"
+          set +e
+          timeout 1s sh solution_0_github_source.sh 0 "$U" stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(b)>=3
+          for x,y in zip(a,b):
+            for k in ("O","Q","X","C","i","S","U"):
+              assert x[k]==y[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          U="https://github.com/letsgo0226/solution_0_ac_motor.sh/tree/${GITHUB_SHA}"
+          set +e
+          sh solution_0_github_source.sh 1 "$U" finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-source-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
