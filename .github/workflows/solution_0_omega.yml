@@ -18,13 +18,35 @@ jobs:
           test "$(wc -c < solution_0_omega.sh)" -le 2048
           sh -n solution_0_omega.sh
           ! grep -E 'sha|hashlib' solution_0_omega.sh
+      - name: Verify proof certificate
+        run: |
+          sh solution_0_omega.sh --proof "bubble seed" omega_proof.jsonl
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("omega_proof.jsonl")]
+          assert len(rows)==1
+          d=rows[0]
+          assert d["P"]=="solution_0_omega.sh"
+          assert d["O"]=="OMEGA_KERNEL_PROOF"
+          assert d["LAW"]=="R(8,q)=take_8(R(0,q))"
+          assert d["DEF"]==8 and d["INF"]==0
+          assert d["PREFIX_OK"]==1 and d["FORMAL"]==1
+          assert d["REV"]=="G257_to_canonical_json"
+          assert d["NO_CLAIM"]==["physical_universe","global_completeness"]
+          assert d["VERDICT"]=="ACCEPT"
+          g=int(d["G257"]); b=[]
+          while g:
+            b.append(g%257-1); g//=257
+          base={k:d[k] for k in d if k not in ("G257","STATE","VERDICT")}
+          assert bytes(b).decode()==json.dumps(base,separators=(",",":"),sort_keys=True)
+          PY
       - name: Verify omega bubble certificates
         run: |
-          sh solution_0_omega.sh 3 "bubble seed" omega_witness.jsonl
+          sh solution_0_omega.sh 8 "bubble seed" omega_witness.jsonl
           python3 - <<'PY'
           import json
           rows=[json.loads(x) for x in open("omega_witness.jsonl")]
-          assert len(rows)==3
+          assert len(rows)==8
           for i,d in enumerate(rows,1):
             assert d["P"]=="solution_0_omega.sh"
             assert d["O"]=="OMEGA_BUBBLE_AC_TM"
@@ -43,7 +65,7 @@ jobs:
             base={k:d[k] for k in d if k not in ("G257","STATE","VERDICT")}
             assert bytes(b).decode()==json.dumps(base,separators=(",",":"),sort_keys=True)
           PY
-      - name: Verify N=0 controlled stream
+      - name: Verify N=8 prefix of N=0 stream
         run: |
           set +e
           timeout 3s sh solution_0_omega.sh 0 "bubble seed" omega_stream.jsonl
@@ -52,9 +74,12 @@ jobs:
           test "$rc" -eq 124
           python3 - <<'PY'
           import json
-          rows=[json.loads(x) for x in open("omega_stream.jsonl")]
-          assert len(rows)>=3
-          assert [d["STEP"] for d in rows[:3]]==[1,2,3]
+          finite=[json.loads(x) for x in open("omega_witness.jsonl")]
+          stream=[json.loads(x) for x in open("omega_stream.jsonl")]
+          assert len(finite)==8
+          assert len(stream)>=8
+          assert finite==stream[:8]
+          assert [d["STEP"] for d in stream[:8]]==list(range(1,9))
           PY
       - name: Verify refuse overwrite
         run: |
@@ -64,6 +89,7 @@ jobs:
         with:
           name: solution_0_omega-witness-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            omega_proof.jsonl
             omega_witness.jsonl
             omega_stream.jsonl
           retention-days: 90
