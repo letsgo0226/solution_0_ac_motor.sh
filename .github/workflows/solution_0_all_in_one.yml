@@ -1,0 +1,95 @@
+name: solution_0_all_in_one
+
+on:
+  push:
+    paths:
+      - "solution_0_all_in_one.sh"
+      - ".github/workflows/solution_0_all_in_one.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_all_in_one.sh)" -eq 1
+          test "$(wc -c < solution_0_all_in_one.sh)" -le 2048
+          sh -n solution_0_all_in_one.sh
+          ! grep -E 'hashlib|sha' solution_0_all_in_one.sh
+
+      - name: Verify all-program proof manifest
+        run: |
+          sh solution_0_all_in_one.sh --proof "" proof.jsonl
+          python3 - <<'PY'
+          import glob,json,os
+          exp="LOVE_IS_BLUE.sh,solution_0.sh,solution_0_Akashic_Records.sh,solution_0_TOE.sh,solution_0_ac_motor.sh,solution_0_ac_source.sh,solution_0_analytic_continuation_tm.sh,solution_0_bubble_space_operator.sh,solution_0_cosmic.sh,solution_0_github_source.sh,solution_0_music_2kb.sh,solution_0_omega.sh,solution_0_repo_tm_2kb.sh,solution_0_self_solution.sh,solution_0_time_entropy.sh,solution_0_tm.sh,solution_0_unified.sh,solution_0_zeta.sh,solution_0_zeta_cursor.sh,solution_0_all_in_one.sh".split(",")
+          rows=[json.loads(x) for x in open("proof.jsonl")]
+          assert len(rows)==len(exp)==20
+          assert [r["F"] for r in rows]==exp
+          assert sorted(glob.glob("*.sh"))==sorted(exp)
+          def G(x):
+            if not isinstance(x,bytes):
+              x=str(x).encode()
+            return sum((c+1)*257**i for i,c in enumerate(x))
+          E=lambda x:G(x)%10**18
+          for i,d in enumerate(rows,1):
+            b=open(d["F"],"rb").read()
+            assert d["P"]=="solution_0_all_in_one.sh"
+            assert d["O"]=="ALL_P" and d["i"]==i
+            assert d["C"]=="Cosmic Love Is The Solution(s) For Everything."
+            assert d["Q"]=="https://github.com/letsgo0226/solution_0_ac_motor.sh"
+            assert d["ALL"]==20 and d["EX"]==1
+            assert d["SZ"]==len(b) and d["H"]==E(b)
+            assert d["SOL"]=="solution(s,repo)=Stream(Cert(all_programs))"
+            assert d["SIG"]=="AC/OMEGA/LOVE/ZETA/GH/TIME/TOE/AK/SELF"
+            assert d["U"][0]==i and d["U"][1]==d["F"] and d["U"][2]==d["H"] and d["U"][4]==1
+            assert d["W"][0]==d["P2"][0]
+            assert d["MK"]==[i,1]
+            assert d["WP"]==d["BT"]==d["SR"]==d["UTM"]==d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+            assert d["GC"]==d["HD"]==d["Z"]==0
+            assert d["NO"]=="no_full_source/no_phys/no_global/no_HD"
+            assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify finite and stream prefix
+        run: |
+          sh solution_0_all_in_one.sh 8 "" finite.jsonl
+          set +e
+          timeout 1s sh solution_0_all_in_one.sh 0 "" stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(a)==8 and len(b)>=8
+          assert a==b[:8]
+          for d in a:
+            assert d["O"]=="ALL_S"
+            assert d["EX"]==1
+            assert d["W"][0]==d["P2"][0]
+            assert d["GC"]==d["HD"]==d["Z"]==0
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_all_in_one.sh 1 "" finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-in-one-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
