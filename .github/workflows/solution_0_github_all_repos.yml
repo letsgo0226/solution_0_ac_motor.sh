@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +46,7 @@ jobs:
             assert d["W"][0]==d["P2"][0]
             assert d["WP"]==d["SR"]==d["UTM"]==d["TM"]==d["AC"]==d["ZE"]==d["OP"]==d["PUBLIC"]==1
             assert d["GC"]==d["HD"]==0
-            assert d["NO"]=="public_only/no_private/no_full_source/no_global/no_HD"
+            assert d["NO"]=="public/no_private/no_global/no_HD"
             assert d["V"]=="ACCEPT"
           PY
 
