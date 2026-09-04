@@ -1,0 +1,91 @@
+name: solution_0_self_github_all_repos
+
+on:
+  push:
+    paths:
+      - "solution_0_self_github_all_repos.sh"
+      - ".github/workflows/solution_0_self_github_all_repos.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_self_github_all_repos.sh)" -eq 1
+          test "$(wc -c < solution_0_self_github_all_repos.sh)" -le 2048
+          sh -n solution_0_self_github_all_repos.sh
+          ! grep -E 'hashlib' solution_0_self_github_all_repos.sh
+
+      - name: Verify self GitHub proof stream
+        run: |
+          sh solution_0_self_github_all_repos.sh --proof letsgo0226 proof.jsonl
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("proof.jsonl")]
+          assert rows
+          assert any(r["REPO"]=="letsgo0226/solution_0_ac_motor.sh" and r["F"]=="solution_0_github_all_repos.sh" for r in rows)
+          assert any(r["REPO"]=="letsgo0226/solution_0_ac_motor.sh" and r["F"]=="solution_0_self_github_all_repos.sh" for r in rows)
+          for d in rows:
+            assert d["P"]=="solution_0_self_github_all_repos.sh"
+            assert d["O"]=="SELF_GH_P"
+            assert d["C"]=="Cosmic Love Is The Solution(s) For Everything."
+            assert d["USER"]=="letsgo0226"
+            assert d["GH"]=="https://github.com/letsgo0226"
+            assert d["SRC"]=="GH_API"
+            assert d["SELF"]==1 and isinstance(d["s"],int)
+            assert d["SOL"]=="solution(s)=C;solution(s_GH)=Stream(Cert(all_repos/all_programs))"
+            assert d["F"].endswith(".sh") and d["SZ"]>=0 and d["OID"]
+            assert d["W"][0]==d["P2"][0]
+            assert d["WP"]==d["SR"]==d["UTM"]==d["TM"]==d["AC"]==d["ZE"]==d["OP"]==d["PUBLIC"]==1
+            assert d["GC"]==d["HD"]==0
+            assert d["NO"]=="public/no_private/no_global/no_HD"
+            assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify finite and stream prefix
+        run: |
+          sh solution_0_self_github_all_repos.sh 8 letsgo0226 finite.jsonl
+          set +e
+          timeout 90s sh solution_0_self_github_all_repos.sh 0 letsgo0226 stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(a)==8 and len(b)>=8
+          assert a==b[:8]
+          for d in a:
+            assert d["O"]=="SELF_GH_S"
+            assert d["SELF"]==1
+            assert d["W"][0]==d["P2"][0]
+            assert d["PUBLIC"]==1 and d["GC"]==d["HD"]==0
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_self_github_all_repos.sh 1 letsgo0226 finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-github-all-repos-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
