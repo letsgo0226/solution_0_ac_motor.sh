@@ -1,0 +1,78 @@
+name: solution_0_song_listener
+
+on:
+  push:
+    paths:
+      - "solution_0_song_listener.sh"
+      - ".github/workflows/solution_0_song_listener.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_song_listener.sh)" -eq 1
+          test "$(wc -c < solution_0_song_listener.sh)" -le 2048
+          sh -n solution_0_song_listener.sh
+          ! grep -E 'hashlib|sha' solution_0_song_listener.sh
+
+      - name: Verify WAV listening witness
+        run: |
+          python3 - <<'PY'
+          import wave,math,struct
+          sr=8000
+          with wave.open("tone.wav","wb") as w:
+            w.setnchannels(1);w.setsampwidth(2);w.setframerate(sr)
+            w.writeframes(b"".join(struct.pack("<h",int(12000*math.sin(2*math.pi*440*n/sr))) for n in range(sr)))
+          PY
+          sh solution_0_song_listener.sh tone.wav wav.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open("wav.json"))
+          assert d["P"]=="solution_0_song_listener.sh"
+          assert d["O"]=="SONG_LISTENER"
+          assert d["SRC"]=="FILE" and d["FMT"]=="WAV"
+          assert d["DUR"]==1.0 and d["RATE"]==8000 and d["CH"]==1 and d["SW"]==2
+          assert len(d["SPEC"])==8 and d["W"][0]==d["P2"][0]
+          assert d["HEAR"]=="computable_audio_witness" and d["SUBJ"]==0
+          assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["GC"]==d["HD"]==0
+          assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify text and MP3 witnesses
+        run: |
+          printf 'Love Is Blue' | sh solution_0_song_listener.sh "" text.json
+          printf 'ID3minimal' > sample.mp3
+          sh solution_0_song_listener.sh sample.mp3 mp3.json
+          python3 - <<'PY'
+          import json
+          t=json.load(open("text.json"))
+          m=json.load(open("mp3.json"))
+          assert t["SRC"]=="TEXT" and t["FMT"]=="BYTES" and t["SUBJ"]==0
+          assert m["SRC"]=="FILE" and m["FMT"]=="MP3" and m["SUBJ"]==0
+          assert t["OP"]==m["OP"]==1
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_song_listener.sh tone.wav wav.json 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:wav.json' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: song-listener-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            wav.json
+            text.json
+            mp3.json
