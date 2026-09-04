@@ -1,0 +1,101 @@
+name: solution_0_akashic_self
+
+on:
+  push:
+    paths:
+      - "solution_0_akashic_self.sh"
+      - ".github/workflows/solution_0_akashic_self.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_akashic_self.sh)" -eq 1
+          test "$(wc -c < solution_0_akashic_self.sh)" -le 2048
+          sh -n solution_0_akashic_self.sh
+          ! grep -E 'hashlib|sha' solution_0_akashic_self.sh
+
+      - name: Verify proof
+        run: |
+          sh solution_0_akashic_self.sh --proof "Cosmic Love Is The Solution(s) For Everything." proof.jsonl
+          python3 - <<'PY'
+          import json
+          G=lambda x:sum((c+1)*257**i for i,c in enumerate(x if isinstance(x,bytes)else str(x).encode()))
+          E=lambda x:G(x)%10**18
+          R=lambda n:n>1 and all(n%d for d in range(2,int(n**.5)+1))
+          d=json.load(open("proof.jsonl"))
+          assert d["P"]=="solution_0_akashic_self.sh"
+          assert d["O"]=="AK_SELF_P"
+          assert d["C"]=="Cosmic Love Is The Solution(s) For Everything."
+          assert d["T"]=="Akashic Records"
+          assert d["SAT"]==d["AK"]==d["SS"]==1
+          assert d["SOL"]=="solution(s,C)=Cert(s|=C);AK=Stream(Cert(s|=f(a_n)))"
+          assert "s=E(SELF)" in d["AX"] and "BT" in d["AX"]
+          assert d["W"][0]==d["P2"][0]==E(d["U"])
+          pk,cn,k,rh,m=d["M"]
+          assert R(pk)
+          if rh:
+            assert cn==pk and m==0
+          else:
+            assert cn!=pk and not R(cn) and cn//2<m<cn and R(m)
+          assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["GC"]==d["HD"]==d["Z"]==0
+          assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify finite and file input
+        run: |
+          printf 'Akashic local source\n' > sample.txt
+          sh solution_0_akashic_self.sh 4 sample.txt finite.jsonl
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==4
+          for i,d in enumerate(rows,1):
+            assert d["O"]=="AK_SELF_S" and d["i"]==i
+            assert d["SRC"]=="FILE"
+            assert d["AK"]==d["SS"]==d["BT"]==d["WP"]==1
+            assert d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+            assert d["GC"]==d["HD"]==d["Z"]==0
+          PY
+
+      - name: Verify zero stream prefix
+        run: |
+          set +e
+          timeout 1s sh solution_0_akashic_self.sh 0 sample.txt stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(b)>=4
+          for x,y in zip(a,b):
+            for k in ("O","C","T","S","Q","SRC","BODY","i","SOL","ONTO","AX","SAT","A","M","U","W","P2","AK","SS","BT","WP","SR","UTM","TM","AC","ZE","OP","GC","HD","Z"):
+              assert x[k]==y[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_akashic_self.sh 1 sample.txt finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: akashic-self-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
