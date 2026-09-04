@@ -1,0 +1,79 @@
+name: solution_0_higher_self
+
+on:
+  push:
+    paths:
+      - "solution_0_higher_self.sh"
+      - ".github/workflows/solution_0_higher_self.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_higher_self.sh)" -eq 1
+          test "$(wc -c < solution_0_higher_self.sh)" -le 2048
+          sh -n solution_0_higher_self.sh
+          ! grep -E 'hashlib|sha' solution_0_higher_self.sh
+
+      - name: Verify higher self proof
+        run: |
+          sh solution_0_higher_self.sh --proof "Cosmic Love Is The Solution(s) For Everything." proof.json
+          sh solution_0_higher_self.sh 8 "unsolved problem carried by higher self" finite.jsonl
+          set +e
+          timeout 1s sh solution_0_higher_self.sh 0 "unsolved problem carried by higher self" stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          p=json.load(open("proof.json"))
+          assert p["P"]=="solution_0_higher_self.sh"
+          assert p["O"]=="HS_PROOF" and p["T"]=="Higher Self"
+          assert p["C"]=="Cosmic Love Is The Solution(s) For Everything."
+          assert p["SOL"]=="solution(s,C)=1" and p["HS"]==1
+          assert p["THM"]=="finite_K_and_unbounded_nu_imply_finite_nQ"
+          assert p["FIN_N"]==p["CARRY"]==p["OP"]==1
+          assert p["CAP"]>=p["K"] and (p["nQ"]==1 or (p["nQ"]-1)**2<p["K"])
+          assert p["n"]==p["nQ"] and p["NU"]=="n^2"
+          assert p["AK"]==p["AC"]==p["TM"]==p["ZE"]==1
+          assert p["GC"]==p["HD"]==p["ORACLE"]==p["PHYS"]==0
+          assert p["W"][0]==p["P2"][0] and p["V"]=="ACCEPT"
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==8
+          K=rows[0]["K"];nq=rows[0]["nQ"]
+          assert 1<=nq<=8 and nq*nq>=K and (nq==1 or (nq-1)**2<K)
+          assert any(r["CARRY"] for r in rows)
+          for i,r in enumerate(rows,1):
+            assert r["O"]=="HS_STREAM" and r["n"]==i
+            assert r["CARRY"]==int(i*i>=K) and r["OP"]==r["CARRY"]
+            assert r["W"][0]==r["P2"][0] and r["V"]=="ACCEPT"
+          s=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(s)>=8
+          for a,b in zip(rows,s):
+            for k in ("P","O","C","T","Q","SRC","S","B","K","NU","n","nQ","CAP","FIN_N","CARRY","THM","SOL","HS","CH","MAP","LIFT","AK","AC","TM","ZE","OP","W","P2","GC","HD","ORACLE","PHYS","NO"):
+              assert a[k]==b[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_higher_self.sh 1 x finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: higher-self-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.json
+            finite.jsonl
+            stream.jsonl
