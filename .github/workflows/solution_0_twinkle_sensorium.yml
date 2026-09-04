@@ -1,0 +1,106 @@
+name: solution_0_twinkle_sensorium
+
+on:
+  push:
+    paths:
+      - "solution_0_twinkle_sensorium.sh"
+      - ".github/workflows/solution_0_twinkle_sensorium.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify one-liner and size
+        run: |
+          test "$(wc -l < solution_0_twinkle_sensorium.sh)" -eq 1
+          test "$(wc -c < solution_0_twinkle_sensorium.sh)" -le 2048
+          sh -n solution_0_twinkle_sensorium.sh
+          ! grep -E 'hashlib|sha' solution_0_twinkle_sensorium.sh
+
+      - name: Verify self-solution proof
+        run: |
+          sh solution_0_twinkle_sensorium.sh --proof "Cosmic Love Is The Solution(s) For Everything." proof.jsonl
+          python3 - <<'PY'
+          import json
+          d=json.load(open("proof.jsonl"))
+          assert d["P"]=="solution_0_twinkle_sensorium.sh"
+          assert d["O"]=="TW_SENS_P"
+          assert d["C"]=="Cosmic Love Is The Solution(s) For Everything."
+          assert d["SAT"]==1 and d["SOL"]=="solution(s,C)=1"
+          assert d["T"]=="Twinkle" and d["TW"]=="CCGGAAGFFEEDDC" and d["ZT"]==0
+          assert d["SJ"]==d["GC"]==d["HD"]==0
+          assert d["AKR"]==d["SR"]==d["UTM"]==d["TM"]==d["AC"]==d["ZE"]==d["OP"]==1
+          assert d["W"][0]==d["P2"][0]
+          assert d["V"]=="ACCEPT"
+          PY
+
+      - name: Verify sense witnesses
+        run: |
+          sh solution_0_twinkle_sensorium.sh 4 "taste of blue" finite.jsonl
+          python3 - <<'PY'
+          import wave,math,struct
+          sr=8000
+          with wave.open("tone.wav","wb") as w:
+            w.setnchannels(1);w.setsampwidth(2);w.setframerate(sr)
+            w.writeframes(b"".join(struct.pack("<h",int(9000*math.sin(2*math.pi*440*n/sr))) for n in range(sr)))
+          PY
+          printf 'ID3minimal' > sample.mp3
+          printf '\211PNG\r\n\032\n' > sample.png
+          sh solution_0_twinkle_sensorium.sh 1 tone.wav wav.json
+          sh solution_0_twinkle_sensorium.sh 1 sample.mp3 mp3.json
+          sh solution_0_twinkle_sensorium.sh 1 sample.png png.json
+          python3 - <<'PY'
+          import json
+          rows=[json.loads(x) for x in open("finite.jsonl")]
+          assert len(rows)==4
+          for i,d in enumerate(rows,1):
+            assert d["O"]=="TW_SENS_S" and d["i"]==i
+            assert d["SE"]=="TONGUE" and d["SAT"]==1
+            assert d["W"][0]==d["P2"][0]
+            assert d["EM"]=="embodied_TM" and d["SJ"]==d["GC"]==d["HD"]==0
+          w=json.load(open("wav.json"));m=json.load(open("mp3.json"));p=json.load(open("png.json"))
+          assert w["SE"]==m["SE"]=="EAR" and p["SE"]=="EYE"
+          assert w["FMT"]=="WAV" and m["FMT"]=="MP3" and p["FMT"]=="IMG"
+          PY
+
+      - name: Verify zero stream prefix
+        run: |
+          set +e
+          timeout 1s sh solution_0_twinkle_sensorium.sh 0 "taste of blue" stream.jsonl
+          rc=$?
+          set -e
+          test "$rc" -eq 124
+          python3 - <<'PY'
+          import json
+          a=[json.loads(x) for x in open("finite.jsonl")]
+          b=[json.loads(x) for x in open("stream.jsonl")]
+          assert len(b)>=4
+          for x,y in zip(a,b):
+            for k in ("O","C","T","Q","SRC","FMT","SE","6S","S","B","SP","i","SAT","SOL","AK","U","W","P2","TW","ZT","EM","LI","HC","SJ","AKR","SR","UTM","TM","AC","ZE","OP","GC","HD","NO"):
+              assert x[k]==y[k]
+          PY
+
+      - name: Verify refuse overwrite
+        run: |
+          set +e
+          sh solution_0_twinkle_sensorium.sh 1 "Twinkle" finite.jsonl 2>refuse.err
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          grep 'refuse_overwrite:finite.jsonl' refuse.err
+
+      - name: Archive witness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: twinkle-sensorium-witness-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          path: |
+            proof.jsonl
+            finite.jsonl
+            stream.jsonl
+            wav.json
+            mp3.json
+            png.json
