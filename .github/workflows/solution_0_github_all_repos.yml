@@ -54,7 +54,7 @@ jobs:
         run: |
           sh solution_0_github_all_repos.sh 8 letsgo0226 finite.jsonl
           set +e
-          timeout 1s sh solution_0_github_all_repos.sh 0 letsgo0226 stream.jsonl
+          timeout 90s sh solution_0_github_all_repos.sh 0 letsgo0226 stream.jsonl
           rc=$?
           set -e
           test "$rc" -eq 124
