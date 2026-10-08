@@ -71,3 +71,19 @@ actual singing render receipt
         =
 auditable finished-song provenance
 ```
+
+## Renderer conditioning truthfulness
+
+Every render receipt declares `render_route`, `conditioning`, and `guide_midi_used`.
+
+For the currently connected full-song renderer the truthful route is:
+
+```json
+{
+  "render_route": "lyrics-conditioned-song",
+  "conditioning": ["lyrics", "style", "structure"],
+  "guide_midi_used": false
+}
+```
+
+This prevents HSI from claiming that an audio render followed the deterministic MIDI when the renderer did not actually accept MIDI input. A future MIDI-to-singing engine can set `guide_midi_used: true` only when the guide MIDI is genuinely consumed.
