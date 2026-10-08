@@ -2,12 +2,12 @@ name: hsi_native_render
 
 on:
   push:
-    branches: [main]
+    branches: [hsi-music-v1]
     paths:
-      - "hsi-native.sh"
-      - "hsi_native_renderer.py"
-      - "HSI_NATIVE_RENDER.md"
-      - ".github/workflows/hsi_native_renderer.yml"
+      - "hsi_music/native_bootstrap.sh"
+      - "hsi_music/native_renderer.py"
+      - "hsi_music/NATIVE_RENDER.md"
+      - ".github/workflows/hsi_native_render.yml"
   workflow_dispatch:
 
 jobs:
@@ -20,11 +20,11 @@ jobs:
           set -eu
           sh -n hsi_music/native_bootstrap.sh
           python3 -m py_compile hsi_music/native_renderer.py
-          ! grep -Eq 'VERSE|CHORUS|SCALES=|VOWELS=|progression|cinematic dream pop' hsi_native_renderer.py
+          ! grep -Eq 'VERSE|CHORUS|SCALES=|VOWELS=|progression|cinematic dream pop' hsi_music/native_renderer.py
           rm -rf /tmp/hsi-a /tmp/hsi-b /tmp/hsi-c /tmp/hsi-bootstrap
-          python3 hsi_native_renderer.py --bars 4 --out /tmp/hsi-a "Blue Pleiadian Stars"
-          python3 hsi_native_renderer.py --bars 4 --out /tmp/hsi-b "Blue Pleiadian Stars"
-          python3 hsi_native_renderer.py --bars 4 --out /tmp/hsi-c "Moon Cat Home"
+          python3 hsi_music/native_renderer.py --bars 4 --out /tmp/hsi-a "Blue Pleiadian Stars"
+          python3 hsi_music/native_renderer.py --bars 4 --out /tmp/hsi-b "Blue Pleiadian Stars"
+          python3 hsi_music/native_renderer.py --bars 4 --out /tmp/hsi-c "Moon Cat Home"
           cmp /tmp/hsi-a/song.wav /tmp/hsi-b/song.wav
           cmp /tmp/hsi-a/lyrics.txt /tmp/hsi-b/lyrics.txt
           ! cmp -s /tmp/hsi-a/song.wav /tmp/hsi-c/song.wav
