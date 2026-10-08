@@ -1,0 +1,31 @@
+name: hsi_music_v1
+
+on:
+  push:
+    branches: [hsi-music-v1]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test HSI Music
+        run: |
+          cd hsi_music
+          python3 -m unittest -v test_core.py
+          cd ..
+          python3 hsi_music/build.py "昴宿星團的藍"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path("hsi_music.hsicert").read_text())
+          o=json.loads(Path("hsi_music_object.json").read_text())
+          assert c["protocol"]=="HSI-MUSIC/1.0" and c["closed"]==1
+          assert c["checks"]["blue_preserved"] is True
+          assert c["checks"]["lyrics_provenance"] is True
+          assert Path("hsi_music.mid").read_bytes()[:4]==b"MThd"
+          assert o["lyrics"]["origin"]=="generated-original"
+          assert o["vocal_request"]["mode"]=="singing"
+          PY
