@@ -103,3 +103,49 @@ def certify(music_object):
       "closed":int(closed),
       "scope":"music-generation provenance and intent certificate; not a quality guarantee or voice-identity authorization"
     }
+
+
+RENDER_PROTOCOL="HSI-MUSIC-RENDER/1.0"
+
+def certify_render(music_cert, render_receipt):
+    if not isinstance(music_cert,dict) or not isinstance(render_receipt,dict):
+        return {"protocol":RENDER_PROTOCOL,"closed":0,"reason":"music_cert and render_receipt must be objects"}
+    music_uid=str(music_cert.get("music_uid",""))
+    bound_uid=str(render_receipt.get("music_uid",""))
+    task_id=str(render_receipt.get("task_id",""))
+    output_kind=str(render_receipt.get("output_kind","")).lower()
+    status=str(render_receipt.get("status","")).upper()
+    lyrics_uid=str(render_receipt.get("lyrics_uid",""))
+    renderer=str(render_receipt.get("renderer",""))
+    asset_ref=str(render_receipt.get("asset_ref",""))
+    authorized=bool(render_receipt.get("voice_authorized",False))
+    checks={
+      "music_closed":music_cert.get("closed")==1,
+      "same_music_uid":bool(music_uid) and music_uid==bound_uid,
+      "task_present":bool(task_id),
+      "renderer_present":bool(renderer),
+      "audio_output":output_kind=="audio",
+      "render_succeeded":status=="SUCCEEDED",
+      "lyrics_bound":bool(lyrics_uid),
+      "asset_present":bool(asset_ref),
+      "voice_authorized":authorized
+    }
+    closed=all(checks.values())
+    body={
+      "music_uid":music_uid,
+      "lyrics_uid":lyrics_uid,
+      "renderer":renderer,
+      "task_id":task_id,
+      "output_kind":output_kind,
+      "status":status,
+      "asset_uid":uid(asset_ref) if asset_ref else None
+    }
+    return {
+      "protocol":RENDER_PROTOCOL,
+      "music_uid":music_uid,
+      "render_uid":uid(body),
+      "asset_uid":body["asset_uid"],
+      "checks":checks,
+      "closed":int(closed),
+      "scope":"render receipt binding only; asset URL is represented by digest and need not be committed"
+    }
