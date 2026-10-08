@@ -43,6 +43,8 @@ class HSIMusicTests(unittest.TestCase):
         r=core.certify_render(m,{
           "music_uid":m["music_uid"],"lyrics_uid":l["lyrics_uid"],
           "renderer":"connected-singing-engine","task_id":"task-1",
+          "render_route":"lyrics-conditioned-song","conditioning":["lyrics","style","structure"],
+          "guide_midi_used":False,
           "output_kind":"audio","status":"SUCCEEDED",
           "asset_ref":"https://example.invalid/private-audio","voice_authorized":True
         })
@@ -52,6 +54,8 @@ class HSIMusicTests(unittest.TestCase):
         m={"music_uid":"m1","closed":1}
         r=core.certify_render(m,{
           "music_uid":"other","lyrics_uid":"l1","renderer":"engine","task_id":"task-1",
+          "render_route":"lyrics-conditioned-song","conditioning":["lyrics"],
+          "guide_midi_used":False,
           "output_kind":"video","status":"SUCCEEDED","asset_ref":"asset","voice_authorized":True
         })
         self.assertEqual(r["closed"],0)
