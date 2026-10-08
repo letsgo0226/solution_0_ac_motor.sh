@@ -55,10 +55,7 @@ if [ -n "${HSI_MUSIC_RENDER_URL:-}" ]; then
   echo "[HSI Music] remote renderer configured; submitting..."
   RESPONSE=$(python3 hsi_music/remote_render.py)
   URL=$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["url"])')
-  TASK=$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("task_id") or json.load(sys.stdin).get("taskId") or "")' 2>/dev/null || true)
-  if [ -z "$TASK" ]; then
-    TASK=$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("task_id",d.get("taskId","remote-task")))' )
-  fi
+  TASK=$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("task_id",d.get("taskId","remote-task")))' )
   RENDERER=$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("renderer","remote-singing-renderer"))')
   python3 hsi_music/import_render.py "$URL" --task-id "$TASK" --renderer "$RENDERER"
   echo "[HSI Music] finished: hsi_music_song.mp3"
