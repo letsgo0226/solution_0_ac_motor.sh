@@ -56,12 +56,12 @@ jobs:
           ! grep -Eiq 'sha|hashlib' hsi_music_2kb.sh
           ! grep -q '昴宿星團的藍' hsi_music_2kb.sh
           ! grep -q 'cinematic dream pop' hsi_music_2kb.sh
-          rm -f hsi2k.txt hsi2k.keywords hsi2k.cert hsi2k.mp3 hsi2k.e257
-          printf '月光 貓 回家\n' | sh hsi_music_2kb.sh
+          rm -rf ci-hsi2k-local ci-hsi2k-render
+          printf '月光 貓 回家\n' | HSI_OUT="$PWD/ci-hsi2k-local" sh hsi_music_2kb.sh
           python3 - <<'PY'
           import json
           from pathlib import Path
-          c=json.loads(Path("hsi2k.cert").read_text())
+          c=json.loads(Path("ci-hsi2k-local/hsi2k.cert").read_text())
           assert c["p"]=="HSI-MUSIC-2K/1" and c["r"]==0 and c["c"]==1
           def D(n):
               a=[]
@@ -69,9 +69,9 @@ jobs:
                   n,r=divmod(n,257); a.append(r-1)
               return bytes(a[::-1])
           assert D(c["q"]).decode()=="月光 貓 回家"
-          assert Path("hsi2k.keywords").read_text()=="月光 貓 回家"
+          assert Path("ci-hsi2k-local/hsi2k.keywords").read_text()=="月光 貓 回家"
           assert "l" not in c
-          assert not Path("hsi2k.txt").exists()
+          assert not Path("ci-hsi2k-local/hsi2k.txt").exists()
           assert D(c["b"])==b"PLEIADIAN-BLUE"
           PY
           python3 - <<'PY' &
@@ -93,21 +93,21 @@ jobs:
           PY
           S=$!
           sleep 1
-          HSI_RENDER_URL=http://127.0.0.1:18765/render sh hsi_music_2kb.sh "可逆之歌"
+          HSI_OUT="$PWD/ci-hsi2k-render" HSI_RENDER_URL=http://127.0.0.1:18765/render sh hsi_music_2kb.sh "可逆之歌"
           kill $S || true
           python3 - <<'PY'
           import json
           from pathlib import Path
-          c=json.loads(Path("hsi2k.cert").read_text())
-          a=json.loads(Path("hsi2k.e257").read_text())
+          c=json.loads(Path("ci-hsi2k-render/hsi2k.cert").read_text())
+          a=json.loads(Path("ci-hsi2k-render/hsi2k.e257").read_text())
           def D(n):
               x=[]
               while n>1:
                   n,r=divmod(n,257);x.append(r-1)
               return bytes(x[::-1])
-          raw=Path("hsi2k.mp3").read_bytes()
+          raw=Path("ci-hsi2k-render/hsi2k.mp3").read_bytes()
           assert c["p"]=="HSI-MUSIC-2K/1" and c["r"]==1 and c["c"]==1
           assert c["n"]==len(raw) and c["k"]==len(a)
           assert b"".join(D(n) for n in a)==raw
-          assert D(c["l"]).decode()==Path("hsi2k.txt").read_text()=="可逆之歌，從關鍵字生成。"
+          assert D(c["l"]).decode()==Path("ci-hsi2k-render/hsi2k.txt").read_text()=="可逆之歌，從關鍵字生成。"
           PY
