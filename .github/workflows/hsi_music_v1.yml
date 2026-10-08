@@ -13,10 +13,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test HSI Music
         run: |
+          sh -n hsi_music.sh
           cd hsi_music
           python3 -m unittest -v test_core.py
           cd ..
-          python3 hsi_music/build.py "昴宿星團的藍"
+          sh hsi_music.sh "昴宿星團的藍"
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -28,4 +29,23 @@ jobs:
           assert Path("hsi_music.mid").read_bytes()[:4]==b"MThd"
           assert o["lyrics"]["origin"]=="generated-original"
           assert o["vocal_request"]["mode"]=="singing"
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("ci_dummy.mp3")
+          p.write_bytes(b"ID3"+b"\\0"*4096)
+          print(p.resolve().as_uri())
+          PY
+          URL=$(python3 -c 'from pathlib import Path; print(Path("ci_dummy.mp3").resolve().as_uri())')
+          sh hsi_music.sh --import-render "$URL" ci-test-task ci-test-renderer
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("hsi_music_render_receipt.json").read_text())
+          c=json.loads(Path("hsi_music_render.hsicert").read_text())
+          assert r["asset_bytes"] > 1024
+          assert len(r["asset_sha256"]) == 64
+          assert r["source_url_stored"] is False
+          assert c["protocol"]=="HSI-MUSIC-RENDER/1.0"
+          assert c["closed"]==1
           PY
