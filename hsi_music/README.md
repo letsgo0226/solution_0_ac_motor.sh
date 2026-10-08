@@ -87,3 +87,44 @@ For the currently connected full-song renderer the truthful route is:
 ```
 
 This prevents HSI from claiming that an audio render followed the deterministic MIDI when the renderer did not actually accept MIDI input. A future MIDI-to-singing engine can set `guide_midi_used: true` only when the guide MIDI is genuinely consumed.
+
+## iSH one-command entry point
+
+On iSH:
+
+```sh
+apk add --no-cache git python3
+git clone -b hsi-music-v1 https://github.com/letsgo0226/solution_0_ac_motor.sh.git
+cd solution_0_ac_motor.sh
+chmod +x hsi_music.sh
+./hsi_music.sh "昴宿星團的藍"
+```
+
+Without any external renderer credentials this produces the complete local package and stops safely after the closed `HSI-MUSIC/1.0` certificate.
+
+### Import a finished singing render
+
+If a renderer has already returned an HTTPS audio URL:
+
+```sh
+./hsi_music.sh --import-render "HTTPS_AUDIO_URL" TASK_ID
+```
+
+The script downloads it immediately, stores `hsi_music_song.mp3`, computes SHA-256, does **not** persist the ephemeral source URL, and creates:
+
+- `hsi_music_render_receipt.json`
+- `hsi_music_render.hsicert`
+
+### Optional renderer bridge
+
+A compatible HTTPS bridge can be configured with:
+
+```sh
+export HSI_MUSIC_RENDER_URL="https://your-renderer.example/render"
+export HSI_MUSIC_RENDER_TOKEN="..."
+./hsi_music.sh "昴宿星團的藍"
+```
+
+The bridge must accept `HSI-MUSIC-RENDER-REQUEST/1.0` and synchronously return JSON containing at least `status: "SUCCEEDED"` and `url`. Credentials belong in environment variables, never in Git.
+
+The ChatGPT Runway connection is not reused as an iSH API credential. It is a separate authorization channel.
