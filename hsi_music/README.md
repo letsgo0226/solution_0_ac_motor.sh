@@ -53,3 +53,21 @@ python3 -m unittest -v test_core.py
 cd ..
 python3 hsi_music/build.py "昴宿星團的藍"
 ```
+
+## Completed audio binding
+
+When a connected singing renderer returns a finished audio asset, HSI Music binds it with `HSI-MUSIC-RENDER/1.0`.
+
+A render closes only when the source `HSI-MUSIC/1.0` certificate is already closed, the receipt points to the same `music_uid`, the renderer task succeeded, the output is audio, the lyrics are bound, the voice is authorized, and an asset reference exists.
+
+The certificate stores only an `asset_uid` digest. A private or signed media URL does not need to be committed to Git.
+
+This separates:
+
+```text
+composition certificate
+        +
+actual singing render receipt
+        =
+auditable finished-song provenance
+```
