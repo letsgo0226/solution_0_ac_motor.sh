@@ -34,5 +34,27 @@ class HSIMusicTests(unittest.TestCase):
                         "mix_spec":{},"intent":{k:True for k in core.BLUE_DIMENSIONS}})
         self.assertEqual(c["closed"],0)
 
+    def test_successful_audio_render_receipt_closes(self):
+        l=core.auto_lyrics("昴宿星團")
+        v=core.make_vocal_request(l,"song.mid")
+        o={"prompt":"昴宿星團","lyrics":l,"midi":{"path":"song.mid"},"vocal_request":v,
+           "mix_spec":{"sample_rate":44100},"intent":{k:True for k in core.BLUE_DIMENSIONS}}
+        m=core.certify(o)
+        r=core.certify_render(m,{
+          "music_uid":m["music_uid"],"lyrics_uid":l["lyrics_uid"],
+          "renderer":"connected-singing-engine","task_id":"task-1",
+          "output_kind":"audio","status":"SUCCEEDED",
+          "asset_ref":"https://example.invalid/private-audio","voice_authorized":True
+        })
+        self.assertEqual(r["closed"],1)
+
+    def test_non_audio_or_unbound_render_fails_closed(self):
+        m={"music_uid":"m1","closed":1}
+        r=core.certify_render(m,{
+          "music_uid":"other","lyrics_uid":"l1","renderer":"engine","task_id":"task-1",
+          "output_kind":"video","status":"SUCCEEDED","asset_ref":"asset","voice_authorized":True
+        })
+        self.assertEqual(r["closed"],0)
+
 if __name__=="__main__":
     unittest.main()
