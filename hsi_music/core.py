@@ -118,12 +118,17 @@ def certify_render(music_cert, render_receipt):
     lyrics_uid=str(render_receipt.get("lyrics_uid",""))
     renderer=str(render_receipt.get("renderer",""))
     asset_ref=str(render_receipt.get("asset_ref",""))
+    route=str(render_receipt.get("render_route",""))
+    conditioning=list(render_receipt.get("conditioning") or [])
+    guide_midi_used=bool(render_receipt.get("guide_midi_used",False))
     authorized=bool(render_receipt.get("voice_authorized",False))
     checks={
       "music_closed":music_cert.get("closed")==1,
       "same_music_uid":bool(music_uid) and music_uid==bound_uid,
       "task_present":bool(task_id),
       "renderer_present":bool(renderer),
+      "render_route_present":bool(route),
+      "conditioning_declared":bool(conditioning),
       "audio_output":output_kind=="audio",
       "render_succeeded":status=="SUCCEEDED",
       "lyrics_bound":bool(lyrics_uid),
@@ -135,6 +140,9 @@ def certify_render(music_cert, render_receipt):
       "music_uid":music_uid,
       "lyrics_uid":lyrics_uid,
       "renderer":renderer,
+      "render_route":route,
+      "conditioning":conditioning,
+      "guide_midi_used":guide_midi_used,
       "task_id":task_id,
       "output_kind":output_kind,
       "status":status,
